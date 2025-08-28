@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">softcommerce_profile_notification_listing.softcommerce_profile_notification_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <buttons>
+            <button name="clear_all">
+                <url path="*/*/clearAll"/>
+                <class>secondary</class>
+                <label translate="true">Clear All Read</label>
+                <aclResource>SoftCommerce_ProfileNotification::notification_delete</aclResource>
+            </button>
+        </buttons>
+        <spinner>softcommerce_profile_notification_columns</spinner>
+        <deps>
+            <dep>softcommerce_profile_notification_listing.softcommerce_profile_notification_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="softcommerce_profile_notification_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">notification_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>SoftCommerce_ProfileNotification::notification_view</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" 
+                      name="softcommerce_profile_notification_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>notification_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filterSearch name="fulltext"/>
+        <filters name="listing_filters">
+            <filterSelect name="severity" provider="${ $.parentName }">
+                <settings>
+                    <options class="SoftCommerce\ProfileNotification\Model\Source\Severity"/>
+                    <caption translate="true">All Severities</caption>
+                    <label translate="true">Severity</label>
+                    <dataScope>severity</dataScope>
+                </settings>
+            </filterSelect>
+            <filterSelect name="profile_id" provider="${ $.parentName }">
+                <settings>
+                    <options class="SoftCommerce\Profile\Model\Source\ProfileEntity"/>
+                    <caption translate="true">All Profiles</caption>
+                    <label translate="true">Profile</label>
+                    <dataScope>profile_id</dataScope>
+                </settings>
+            </filterSelect>
+            <filterSelect name="is_read" provider="${ $.parentName }">
+                <settings>
+                    <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                    <caption translate="true">Any</caption>
+                    <label translate="true">Read Status</label>
+                    <dataScope>is_read</dataScope>
+                </settings>
+            </filterSelect>
+            <filterRange name="created_at" provider="${ $.parentName }">
+                <settings>
+                    <rangeType>datetime</rangeType>
+                    <label translate="true">Created</label>
+                    <dataScope>created_at</dataScope>
+                </settings>
+            </filterRange>
+        </filters>
+        <massaction name="listing_massaction" component="Magento_Ui/js/grid/tree-massactions">
+            <action name="mark_read">
+                <settings>
+                    <url path="softcommerce_notification/notification/massRead"/>
+                    <type>mark_read</type>
+                    <label translate="true">Mark as Read</label>
+                </settings>
+            </action>
+            <action name="mark_unread">
+                <settings>
+                    <url path="softcommerce_notification/notification/massUnread"/>
+                    <type>mark_unread</type>
+                    <label translate="true">Mark as Unread</label>
+                </settings>
+            </action>
+            <action name="delete">
+                <settings>
+                    <url path="softcommerce_notification/notification/massDelete"/>
+                    <type>delete</type>
+                    <label translate="true">Delete</label>
+                    <confirm>
+                        <message translate="true">Are you sure you want to delete selected notifications?</message>
+                        <title translate="true">Delete Notifications</title>
+                    </confirm>
+                </settings>
+            </action>
+        </massaction>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="softcommerce_profile_notification_columns">
+        <settings>
+            <childDefaults>
+                <param name="fieldAction" xsi:type="array">
+                    <item name="provider" xsi:type="string">softcommerce_profile_notification_listing.softcommerce_profile_notification_listing.softcommerce_profile_notification_columns.actions</item>
+                    <item name="target" xsi:type="string">applyAction</item>
+                    <item name="params" xsi:type="array">
+                        <item name="0" xsi:type="string">view</item>
+                        <item name="1" xsi:type="string">${ $.$data.rowIndex }</item>
+                    </item>
+                </param>
+            </childDefaults>
+        </settings>
+        <selectionsColumn name="ids">
+            <settings>
+                <indexField>notification_id</indexField>
+            </settings>
+        </selectionsColumn>
+        <column name="notification_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">ID</label>
+                <sorting>desc</sorting>
+            </settings>
+        </column>
+        <column name="severity" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="SoftCommerce\ProfileNotification\Model\Source\Severity"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Severity</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/severity</bodyTmpl>
+            </settings>
+        </column>
+        <column name="profile_id" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\ProfileName">
+            <settings>
+                <filter>select</filter>
+                <options class="SoftCommerce\Profile\Model\Source\ProfileEntity"/>
+                <label translate="true">Profile</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/profile</bodyTmpl>
+            </settings>
+        </column>
+        <column name="entity_type">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Entity Type</label>
+            </settings>
+        </column>
+        <column name="entity_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Entity ID</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/entity</bodyTmpl>
+            </settings>
+        </column>
+        <column name="title">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Title</label>
+            </settings>
+        </column>
+        <column name="source">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Source</label>
+                <visible>false</visible>
+            </settings>
+        </column>
+        <column name="is_read" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                <filter>select</filter>
+                <label translate="true">Read</label>
+                <dataType>select</dataType>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/boolean</bodyTmpl>
+            </settings>
+        </column>
+        <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <label translate="true">Created</label>
+                <dataType>date</dataType>
+                <dateFormat>MMM d, y, h:mm:ss a</dateFormat>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\Actions">
+            <settings>
+                <indexField>notification_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

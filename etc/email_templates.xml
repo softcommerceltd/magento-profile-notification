@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="profile_notification_critical_alert"
+              label="Profile Critical Error Alert"
+              file="critical-alert.html"
+              type="html"
+              module="SoftCommerce_ProfileNotification"
+              area="adminhtml"/>
+    <template id="profile_notification_process_summary"
+              label="Profile Process Summary"
+              file="process-summary.html"
+              type="html"
+              module="SoftCommerce_ProfileNotification"
+              area="adminhtml"/>
+    <template id="profile_notification_batch_summary"
+              label="Profile Notification Batch Summary"
+              file="batch-summary.html"
+              type="html"
+              module="SoftCommerce_ProfileNotification"
+              area="adminhtml"/>
+</config>

@@ -1,0 +1,12 @@
+<div class="data-grid-cell-content">
+    <!-- ko if: parseInt($row()['is_read']) === 1 -->
+    <span class="grid-severity-notice">
+        <span data-bind="text: $t('Yes')"></span>
+    </span>
+    <!-- /ko -->
+    <!-- ko if: parseInt($row()['is_read']) === 0 -->
+    <span class="grid-severity-minor">
+        <span data-bind="text: $t('No')"></span>
+    </span>
+    <!-- /ko -->
+</div>

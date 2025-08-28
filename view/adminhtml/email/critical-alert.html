@@ -1,0 +1,78 @@
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<!--@subject {{trans "CRITICAL: Profile Error Alert - %profile_name" profile_name=$profile_name}} @-->
+<!--@styles
+    body,td { color:#2f2f2f; font:11px/1.35em Verdana, Arial, Helvetica, sans-serif; }
+@-->
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+        <td align="center" valign="top">
+            <table bgcolor="#FFFFFF" cellpadding="10" cellspacing="0" border="0" width="650" style="border:1px solid #E0E0E0;">
+                <tr>
+                    <td valign="top">
+                        <h1 style="font-size:22px; font-weight:normal; line-height:22px; margin:0 0 11px 0; color:#ff0000;">
+                            {{trans "Critical Error Alert"}}
+                        </h1>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                            <tr>
+                                <td valign="top" style="padding:0 0 5px 0;">
+                                    <p style="font-size:12px; line-height:16px; margin:0;">
+                                        <strong>{{trans "Profile:"}} </strong> {{var profile_name}}<br/>
+                                        <strong>{{trans "Severity:"}} </strong> <span style="color:#ff0000;">{{var severity}}</span><br/>
+                                        <strong>{{trans "Timestamp:"}} </strong> {{var timestamp}}<br/>
+                                        <strong>{{trans "Server:"}} </strong> {{var server_name}}
+                                    </p>
+                                </td>
+                            </tr>
+                            {{if entity_type}}
+                            <tr>
+                                <td valign="top" style="padding:10px 0 5px 0;">
+                                    <p style="font-size:12px; line-height:16px; margin:0;">
+                                        <strong>{{trans "Entity Type:"}} </strong> {{var entity_type}}<br/>
+                                        <strong>{{trans "Entity ID:"}} </strong> {{var entity_id}}
+                                    </p>
+                                </td>
+                            </tr>
+                            {{/if}}
+                            <tr>
+                                <td valign="top" style="padding:10px 0;">
+                                    <h3 style="font-size:14px; font-weight:bold; margin:0 0 5px 0;">{{trans "Error Message"}}</h3>
+                                    <div style="background-color:#f5f5f5; padding:10px; border:1px solid #ddd; font-family:monospace; font-size:11px; white-space:pre-wrap;">{{var message}}</div>
+                                </td>
+                            </tr>
+                            {{if exception_class}}
+                            <tr>
+                                <td valign="top" style="padding:10px 0;">
+                                    <h3 style="font-size:14px; font-weight:bold; margin:0 0 5px 0;">{{trans "Exception Details"}}</h3>
+                                    <p style="font-size:12px; line-height:16px; margin:0 0 5px 0;">
+                                        <strong>{{trans "Exception Class:"}} </strong> {{var exception_class}}
+                                    </p>
+                                    {{if stack_trace}}
+                                    <div style="background-color:#f5f5f5; padding:10px; border:1px solid #ddd; font-family:monospace; font-size:10px; max-height:300px; overflow:auto; white-space:pre-wrap;">{{var stack_trace}}</div>
+                                    {{/if}}
+                                </td>
+                            </tr>
+                            {{/if}}
+                            <tr>
+                                <td valign="top" style="padding:20px 0 0 0;">
+                                    <p style="font-size:12px; line-height:16px; margin:0; color:#666;">
+                                        {{trans "This is an automated notification from your Mage2Plenty connector. Please check your admin panel for more details."}}
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>

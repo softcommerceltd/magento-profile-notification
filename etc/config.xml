@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <softcommerce_profile_notification>
+            <general>
+                <enabled>1</enabled>
+                <log_level>notice</log_level>
+                <retention_days>30</retention_days>
+                <max_notifications>10000</max_notifications>
+            </general>
+            <email>
+                <enabled>0</enabled>
+                <sender>general</sender>
+                <threshold>error</threshold>
+                <real_time_critical>1</real_time_critical>
+                <batch_enabled>1</batch_enabled>
+                <batch_interval>60</batch_interval>
+            </email>
+            <performance>
+                <batch_size>100</batch_size>
+                <enable_async>0</enable_async>
+            </performance>
+        </softcommerce_profile_notification>
+    </default>
+</config>

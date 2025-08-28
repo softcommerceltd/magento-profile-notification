@@ -1,0 +1,61 @@
+{
+    "softcommerce_profile_notification": {
+        "column": {
+            "notification_id": true,
+            "profile_id": true,
+            "process_id": true,
+            "entity_id": true,
+            "entity_type": true,
+            "severity": true,
+            "type": true,
+            "title": true,
+            "message": true,
+            "context": true,
+            "source": true,
+            "exception_class": true,
+            "stack_trace": true,
+            "is_read": true,
+            "is_emailed": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_NOTIFICATION_PROFILE_ID": true
+        },
+        "index": {
+            "IDX_PROFILE_ID": true,
+            "IDX_PROCESS_ID": true,
+            "IDX_ENTITY": true,
+            "IDX_SEVERITY": true,
+            "IDX_CREATED_AT": true,
+            "IDX_IS_READ": true
+        }
+    },
+    "softcommerce_profile_notification_summary": {
+        "column": {
+            "summary_id": true,
+            "profile_id": true,
+            "process_id": true,
+            "total_processed": true,
+            "total_success": true,
+            "total_warnings": true,
+            "total_errors": true,
+            "total_critical": true,
+            "status": true,
+            "started_at": true,
+            "finished_at": true,
+            "peak_memory": true,
+            "execution_time": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "UNQ_PROCESS_ID": true,
+            "FK_SUMMARY_PROFILE_ID": true
+        },
+        "index": {
+            "IDX_SUMMARY_PROFILE_ID": true,
+            "IDX_STARTED_AT": true
+        }
+    }
+}

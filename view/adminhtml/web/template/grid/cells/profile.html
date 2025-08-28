@@ -1,0 +1,10 @@
+<div class="data-grid-cell-content">
+    <!-- ko if: $row()['profile_link'] && $row()['profile_link'] !== '#' -->
+    <a class="entity-link" 
+       data-bind="attr: { href: $row()['profile_link'], title: 'View Profile' }, text: $row()['profile_name']" 
+       onclick="event.stopPropagation(); return true;"></a>
+    <!-- /ko -->
+    <!-- ko if: !$row()['profile_link'] || $row()['profile_link'] === '#' -->
+    <span data-bind="text: $row()['profile_name']"></span>
+    <!-- /ko -->
+</div>

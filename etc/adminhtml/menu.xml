@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="SoftCommerce_ProfileNotification::notification_center"
+             title="Notification Center"
+             translate="title"
+             module="SoftCommerce_ProfileNotification"
+             sortOrder="20"
+             parent="SoftCommerce_Profile::profile_core"
+             action="softcommerce_notification/notification"
+             resource="SoftCommerce_ProfileNotification::notification_view"/>
+        <add id="SoftCommerce_ProfileNotification::notification_summary"
+             title="Process Summary"
+             translate="title"
+             module="SoftCommerce_ProfileNotification"
+             sortOrder="25"
+             parent="SoftCommerce_Profile::profile_core"
+             action="softcommerce_notification/summary"
+             resource="SoftCommerce_ProfileNotification::notification_summary"/>
+    </menu>
+</config>

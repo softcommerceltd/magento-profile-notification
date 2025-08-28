@@ -1,0 +1,152 @@
+// /**
+// * Copyright © Soft Commerce Ltd. All rights reserved.
+// * See LICENSE.txt for license details.
+// */
+
+& when (@media-common = true) {
+    // Wrap all notification styles to avoid global conflicts
+    .softcommerce-notification {
+        /* Notification Severity Styles */
+        .notification-severity {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            display: inline-block;
+        }
+
+        .severity-debug {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+
+        .severity-notice {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .severity-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .severity-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .severity-critical {
+            background-color: #721c24;
+            color: #fff;
+        }
+
+        /* Process Status Styles - Override profile module styles with more specific styling */
+        .process-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            display: inline-block;
+        }
+
+        .status-running {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-success,
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-error,
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Count Styles */
+        .count-success {
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .count-warning {
+            color: #856404;
+            font-weight: bold;
+        }
+
+        .count-error {
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .count-critical {
+            color: #fff;
+            background-color: #721c24;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    }
+
+    /* Notification Grid Specific Styles */
+    .softcommerce-notification-grid {
+        .data-row.unread {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        .entity-link {
+            color: #007bdb;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    /* Notification View Page Styles */
+    .notification-view {
+        .notification-message {
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .notification-context {
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .actions {
+            margin-top: 20px;
+            
+            .action-default.back {
+                padding: 7px 15px;
+                font-size: 1.4rem;
+                font-weight: 600;
+                
+                &:before {
+                    content: '\e617';
+                    font-family: 'Admin Icons';
+                    font-size: 1.6rem;
+                    margin-right: .5rem;
+                    vertical-align: middle;
+                }
+            }
+        }
+    }
+}

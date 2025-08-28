@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="styles"/>
+    <head>
+        <css src="SoftCommerce_ProfileNotification::css/notification.css"/>
+    </head>
+    <body>
+        <attribute name="class" value="softcommerce-notification"/>
+        <referenceBlock name="page.title">
+            <action method="setPageTitle">
+                <argument name="title" xsi:type="string">View Notification</argument>
+            </action>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block class="SoftCommerce\ProfileNotification\Block\Adminhtml\Notification\View" 
+                   name="notification.view" 
+                   template="SoftCommerce_ProfileNotification::notification/view.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

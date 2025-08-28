@@ -1,0 +1,8 @@
+<div class="data-grid-cell-content">
+    <!-- ko if: $row()['entity_id'] -->
+    <span data-bind="text: $row()['entity_id']"></span>
+    <!-- /ko -->
+    <!-- ko ifnot: $row()['entity_id'] -->
+    <span class="na">N/A</span>
+    <!-- /ko -->
+</div>

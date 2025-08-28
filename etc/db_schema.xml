@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    
+    <table name="softcommerce_profile_notification" resource="default" engine="innodb" 
+           comment="Profile Notification Table">
+        <column xsi:type="int" name="notification_id" padding="10" unsigned="true" nullable="false" 
+                identity="true" comment="Notification ID"/>
+        <column xsi:type="int" name="profile_id" padding="10" unsigned="true" nullable="false" 
+                comment="Profile ID"/>
+        <column xsi:type="varchar" name="process_id" nullable="true" length="64" 
+                comment="Unique process run identifier"/>
+        <column xsi:type="varchar" name="entity_id" nullable="true" length="255" 
+                comment="Related entity ID (order_id, product_id, etc)"/>
+        <column xsi:type="varchar" name="entity_type" nullable="true" length="64" 
+                comment="Entity type (order, product, customer, etc)"/>
+        <column xsi:type="varchar" name="severity" nullable="false" length="16" default="notice" 
+                comment="Severity level (debug, notice, warning, error, critical)"/>
+        <column xsi:type="varchar" name="type" nullable="true" length="128" 
+                comment="Notification type/category"/>
+        <column xsi:type="varchar" name="title" nullable="false" length="255" 
+                comment="Title"/>
+        <column xsi:type="text" name="message" nullable="true" 
+                comment="Full message"/>
+        <column xsi:type="json" name="context" nullable="true" 
+                comment="Additional context data"/>
+        <column xsi:type="varchar" name="source" nullable="true" length="255" 
+                comment="Source class/method"/>
+        <column xsi:type="varchar" name="exception_class" nullable="true" length="255" 
+                comment="Exception class if applicable"/>
+        <column xsi:type="text" name="stack_trace" nullable="true" 
+                comment="Exception stack trace"/>
+        <column xsi:type="boolean" name="is_read" nullable="false" default="false" 
+                comment="Is Read"/>
+        <column xsi:type="boolean" name="is_emailed" nullable="false" default="false" 
+                comment="Is Emailed"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" 
+                default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" 
+                default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="notification_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="FK_NOTIFICATION_PROFILE_ID" 
+                    table="softcommerce_profile_notification" column="profile_id"
+                    referenceTable="softcommerce_profile_entity" referenceColumn="entity_id" 
+                    onDelete="CASCADE"/>
+        <index referenceId="IDX_PROFILE_ID" indexType="btree">
+            <column name="profile_id"/>
+        </index>
+        <index referenceId="IDX_PROCESS_ID" indexType="btree">
+            <column name="process_id"/>
+        </index>
+        <index referenceId="IDX_ENTITY" indexType="btree">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+        </index>
+        <index referenceId="IDX_SEVERITY" indexType="btree">
+            <column name="severity"/>
+        </index>
+        <index referenceId="IDX_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="IDX_IS_READ" indexType="btree">
+            <column name="is_read"/>
+        </index>
+    </table>
+    
+    <table name="softcommerce_profile_notification_summary" resource="default" engine="innodb" 
+           comment="Profile Process Summary Table">
+        <column xsi:type="int" name="summary_id" padding="10" unsigned="true" nullable="false" 
+                identity="true" comment="Summary ID"/>
+        <column xsi:type="int" name="profile_id" padding="10" unsigned="true" nullable="false" 
+                comment="Profile ID"/>
+        <column xsi:type="varchar" name="process_id" nullable="false" length="64" 
+                comment="Process ID"/>
+        <column xsi:type="int" name="total_processed" padding="10" unsigned="true" nullable="true" 
+                default="0" comment="Total Processed"/>
+        <column xsi:type="int" name="total_success" padding="10" unsigned="true" nullable="true" 
+                default="0" comment="Total Success"/>
+        <column xsi:type="int" name="total_warnings" padding="10" unsigned="true" nullable="true" 
+                default="0" comment="Total Warnings"/>
+        <column xsi:type="int" name="total_errors" padding="10" unsigned="true" nullable="true" 
+                default="0" comment="Total Errors"/>
+        <column xsi:type="int" name="total_critical" padding="10" unsigned="true" nullable="true" 
+                default="0" comment="Total Critical"/>
+        <column xsi:type="varchar" name="status" nullable="true" length="16" 
+                comment="Status"/>
+        <column xsi:type="timestamp" name="started_at" nullable="true" 
+                comment="Started At"/>
+        <column xsi:type="timestamp" name="finished_at" nullable="true" 
+                comment="Finished At"/>
+        <column xsi:type="bigint" name="peak_memory" padding="20" unsigned="true" nullable="true" 
+                comment="Peak Memory Usage"/>
+        <column xsi:type="decimal" name="execution_time" scale="4" precision="12" nullable="true" 
+                comment="Execution Time in seconds"/>
+        
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="summary_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="UNQ_PROCESS_ID">
+            <column name="process_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="FK_SUMMARY_PROFILE_ID" 
+                    table="softcommerce_profile_notification_summary" column="profile_id"
+                    referenceTable="softcommerce_profile_entity" referenceColumn="entity_id" 
+                    onDelete="CASCADE"/>
+        <index referenceId="IDX_SUMMARY_PROFILE_ID" indexType="btree">
+            <column name="profile_id"/>
+        </index>
+        <index referenceId="IDX_STARTED_AT" indexType="btree">
+            <column name="started_at"/>
+        </index>
+    </table>
+</schema>

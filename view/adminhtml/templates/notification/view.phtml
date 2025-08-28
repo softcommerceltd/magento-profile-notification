@@ -1,0 +1,118 @@
+<?php
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+
+/** @var \SoftCommerce\ProfileNotification\Block\Adminhtml\Notification\View $block */
+$notification = $block->getNotification();
+?>
+<?php if ($notification): ?>
+<div class="notification-view">
+    <div class="messages">
+        <div class="message message-notice">
+            <div><?= $block->escapeHtml(__('Notification has been marked as read.')) ?></div>
+        </div>
+    </div>
+
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <span class="title"><?= $block->escapeHtml(__('Notification Details')) ?></span>
+        </div>
+        <div class="admin__page-section-content">
+            <div class="admin__page-section-item">
+                <div class="admin__page-section-item-title">
+                    <span><?= $block->escapeHtml(__('Profile')) ?></span>
+                </div>
+                <div class="admin__page-section-item-content">
+                    <?= $block->escapeHtml($block->getProfileName()) ?>
+                </div>
+            </div>
+
+            <div class="admin__page-section-item">
+                <div class="admin__page-section-item-title">
+                    <span><?= $block->escapeHtml(__('Severity')) ?></span>
+                </div>
+                <div class="admin__page-section-item-content">
+                    <span class="notification-severity <?= $block->escapeHtml($block->getSeverityClass()) ?>">
+                        <?= $block->escapeHtml($block->getSeverityLabel()) ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="admin__page-section-item">
+                <div class="admin__page-section-item-title">
+                    <span><?= $block->escapeHtml(__('Created At')) ?></span>
+                </div>
+                <div class="admin__page-section-item-content">
+                    <?= $block->escapeHtml($notification->getCreatedAt()) ?>
+                </div>
+            </div>
+
+            <?php if ($notification->getProcessId()): ?>
+            <div class="admin__page-section-item">
+                <div class="admin__page-section-item-title">
+                    <span><?= $block->escapeHtml(__('Process ID')) ?></span>
+                </div>
+                <div class="admin__page-section-item-content">
+                    <code><?= $block->escapeHtml($notification->getProcessId()) ?></code>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($notification->getEntityId()): ?>
+            <div class="admin__page-section-item">
+                <div class="admin__page-section-item-title">
+                    <span><?= $block->escapeHtml(__('Entity ID')) ?></span>
+                </div>
+                <div class="admin__page-section-item-content">
+                    <?= $block->escapeHtml($notification->getEntityId()) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <span class="title"><?= $block->escapeHtml(__('Message')) ?></span>
+        </div>
+        <div class="admin__page-section-content">
+            <div class="notification-message">
+                <?= nl2br($block->escapeHtml($notification->getMessage())) ?>
+            </div>
+        </div>
+    </div>
+
+    <?php if ($notification->getContext()): ?>
+    <?php $context = json_decode($notification->getContext(), true); ?>
+    <?php if (is_array($context) && !empty($context)): ?>
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <span class="title"><?= $block->escapeHtml(__('Context Details')) ?></span>
+        </div>
+        <div class="admin__page-section-content">
+            <pre class="notification-context"><?= $block->escapeHtml(json_encode($context, JSON_PRETTY_PRINT)) ?></pre>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+
+    <div class="actions">
+        <button type="button" class="action-default scalable back" onclick="setLocation('<?= $block->escapeJs($block->getBackUrl()) ?>')">
+            <span><?= $block->escapeHtml(__('Back to List')) ?></span>
+        </button>
+    </div>
+</div>
+<?php else: ?>
+<div class="messages">
+    <div class="message message-error">
+        <div><?= $block->escapeHtml(__('Notification not found.')) ?></div>
+    </div>
+</div>
+<div class="actions">
+    <button type="button" class="action-default scalable back" onclick="setLocation('<?= $block->escapeJs($block->getBackUrl()) ?>')">
+        <span><?= $block->escapeHtml(__('Back to List')) ?></span>
+    </button>
+</div>
+<?php endif; ?>

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="default">
+        <job name="softcommerce_notification_cleanup"
+             instance="SoftCommerce\ProfileNotification\Cron\CleanupOldNotifications"
+             method="execute">
+            <schedule>0 2 * * *</schedule>
+        </job>
+        <job name="softcommerce_notification_send_batch_emails"
+             instance="SoftCommerce\ProfileNotification\Cron\SendBatchEmails"
+             method="execute">
+            <schedule>*/15 * * * *</schedule>
+        </job>
+        <job name="softcommerce_notification_mark_emailed"
+             instance="SoftCommerce\ProfileNotification\Cron\MarkEmailedNotifications"
+             method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
+    </group>
+</config>

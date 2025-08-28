@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">softcommerce_profile_notification_summary_listing.softcommerce_profile_notification_summary_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <spinner>softcommerce_profile_notification_summary_columns</spinner>
+        <deps>
+            <dep>softcommerce_profile_notification_summary_listing.softcommerce_profile_notification_summary_listing_data_source</dep>
+        </deps>
+    </settings>
+    <dataSource name="softcommerce_profile_notification_summary_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">summary_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>SoftCommerce_ProfileNotification::notification_summary</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider" 
+                      name="softcommerce_profile_notification_summary_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>summary_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filterSearch name="fulltext"/>
+        <filters name="listing_filters">
+            <filterSelect name="profile_id" provider="${ $.parentName }">
+                <settings>
+                    <options class="SoftCommerce\Profile\Model\Source\ProfileEntity"/>
+                    <caption translate="true">All Profiles</caption>
+                    <label translate="true">Profile</label>
+                    <dataScope>profile_id</dataScope>
+                </settings>
+            </filterSelect>
+            <filterSelect name="status" provider="${ $.parentName }">
+                <settings>
+                    <options class="SoftCommerce\ProfileNotification\Model\Source\ProcessStatus"/>
+                    <caption translate="true">All Statuses</caption>
+                    <label translate="true">Status</label>
+                    <dataScope>status</dataScope>
+                </settings>
+            </filterSelect>
+            <filterRange name="started_at" provider="${ $.parentName }">
+                <settings>
+                    <rangeType>datetime</rangeType>
+                    <label translate="true">Started At</label>
+                    <dataScope>started_at</dataScope>
+                </settings>
+            </filterRange>
+        </filters>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+    <columns name="softcommerce_profile_notification_summary_columns">
+        <settings>
+            <childDefaults>
+                <param name="fieldAction" xsi:type="array">
+                    <item name="provider" xsi:type="string">softcommerce_profile_notification_summary_listing.softcommerce_profile_notification_summary_listing.softcommerce_profile_notification_summary_columns.actions</item>
+                    <item name="target" xsi:type="string">applyAction</item>
+                    <item name="params" xsi:type="array">
+                        <item name="0" xsi:type="string">view</item>
+                        <item name="1" xsi:type="string">${ $.$data.rowIndex }</item>
+                    </item>
+                </param>
+            </childDefaults>
+        </settings>
+        <column name="summary_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">ID</label>
+                <sorting>desc</sorting>
+            </settings>
+        </column>
+        <column name="profile_id" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\ProfileName">
+            <settings>
+                <filter>select</filter>
+                <options class="SoftCommerce\Profile\Model\Source\ProfileEntity"/>
+                <label translate="true">Profile</label>
+            </settings>
+        </column>
+        <column name="process_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Process ID</label>
+            </settings>
+        </column>
+        <column name="status" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="SoftCommerce\ProfileNotification\Model\Source\ProcessStatus"/>
+                <filter>select</filter>
+                <dataType>select</dataType>
+                <label translate="true">Status</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/status</bodyTmpl>
+            </settings>
+        </column>
+        <column name="total_processed">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Total Processed</label>
+            </settings>
+        </column>
+        <column name="total_success">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Success</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/success</bodyTmpl>
+            </settings>
+        </column>
+        <column name="total_warnings">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Warnings</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/warning</bodyTmpl>
+            </settings>
+        </column>
+        <column name="total_errors">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Errors</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/error</bodyTmpl>
+            </settings>
+        </column>
+        <column name="total_critical">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Critical</label>
+                <bodyTmpl>SoftCommerce_ProfileNotification/grid/cells/critical</bodyTmpl>
+            </settings>
+        </column>
+        <column name="execution_time" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\ExecutionTime">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Execution Time</label>
+            </settings>
+        </column>
+        <column name="peak_memory" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\Memory">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Peak Memory</label>
+            </settings>
+        </column>
+        <column name="started_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <label translate="true">Started At</label>
+                <dataType>date</dataType>
+                <dateFormat>MMM d, y, h:mm:ss a</dateFormat>
+            </settings>
+        </column>
+        <column name="finished_at" class="Magento\Ui\Component\Listing\Columns\Date" component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <label translate="true">Finished At</label>
+                <dataType>date</dataType>
+                <dateFormat>MMM d, y, h:mm:ss a</dateFormat>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="SoftCommerce\ProfileNotification\Ui\Component\Listing\Column\SummaryActions">
+            <settings>
+                <indexField>summary_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

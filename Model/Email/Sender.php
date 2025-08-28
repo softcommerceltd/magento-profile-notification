@@ -1,0 +1,354 @@
+<?php
+/**
+ * Copyright © Soft Commerce Ltd. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+
+declare(strict_types=1);
+
+namespace SoftCommerce\ProfileNotification\Model\Email;
+
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Framework\Translate\Inline\StateInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Psr\Log\LoggerInterface;
+use SoftCommerce\Profile\Api\Data\ProfileInterface;
+use SoftCommerce\Profile\Api\ProfileRepositoryInterface;
+use SoftCommerce\ProfileNotification\Api\Data\NotificationSummaryInterface;
+
+/**
+ * Email Sender
+ */
+class Sender implements SenderInterface
+{
+    private const XML_PATH_EMAIL_ENABLED = 'softcommerce_profile_notification/email/enabled';
+    private const XML_PATH_EMAIL_RECIPIENT = 'softcommerce_profile_notification/email/recipient';
+    private const XML_PATH_EMAIL_SENDER = 'softcommerce_profile_notification/email/sender';
+    private const XML_PATH_EMAIL_THRESHOLD = 'softcommerce_profile_notification/email/threshold';
+    private const XML_PATH_EMAIL_BATCH_ENABLED = 'softcommerce_profile_notification/email/batch_enabled';
+    private const XML_PATH_EMAIL_REAL_TIME_CRITICAL = 'softcommerce_profile_notification/email/real_time_critical';
+    
+    private const EMAIL_TEMPLATE_CRITICAL_ALERT = 'profile_notification_critical_alert';
+    private const EMAIL_TEMPLATE_PROCESS_SUMMARY = 'profile_notification_process_summary';
+    private const EMAIL_TEMPLATE_BATCH_SUMMARY = 'profile_notification_batch_summary';
+    
+    /**
+     * @param TransportBuilder $transportBuilder
+     * @param StateInterface $inlineTranslation
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
+     * @param ProfileRepositoryInterface $profileRepository
+     * @param LoggerInterface $logger
+     */
+    public function __construct(
+        private TransportBuilder $transportBuilder,
+        private StateInterface $inlineTranslation,
+        private ScopeConfigInterface $scopeConfig,
+        private StoreManagerInterface $storeManager,
+        private ProfileRepositoryInterface $profileRepository,
+        private LoggerInterface $logger
+    ) {
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function isRealTimeCriticalEnabled(): bool
+    {
+        return $this->isEmailEnabled() && 
+               $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_REAL_TIME_CRITICAL, ScopeInterface::SCOPE_STORE);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function shouldSendProcessSummary(): bool
+    {
+        if (!$this->isEmailEnabled()) {
+            return false;
+        }
+        
+        $threshold = $this->scopeConfig->getValue(self::XML_PATH_EMAIL_THRESHOLD, ScopeInterface::SCOPE_STORE);
+        return in_array($threshold, ['all', 'summary']);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function sendCriticalAlert(string $message, array $context = []): void
+    {
+        if (!$this->isRealTimeCriticalEnabled()) {
+            return;
+        }
+        
+        try {
+            $this->inlineTranslation->suspend();
+            
+            $storeId = $this->storeManager->getStore()->getId();
+            $recipients = $this->getRecipients();
+            
+            if (empty($recipients)) {
+                return;
+            }
+            
+            // Prepare email variables
+            $templateVars = [
+                'message' => $message,
+                'context' => $context,
+                'profile_name' => $this->getProfileName($context['profile_id'] ?? null),
+                'severity' => 'CRITICAL',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'server_name' => gethostname(),
+                'entity_type' => $context['entity_type'] ?? 'Unknown',
+                'entity_id' => $context['entity_id'] ?? 'N/A',
+                'exception_class' => $context['exception_class'] ?? null,
+                'stack_trace' => $context['stack_trace'] ?? null
+            ];
+            
+            // Send email
+            $this->transportBuilder
+                ->setTemplateIdentifier(self::EMAIL_TEMPLATE_CRITICAL_ALERT)
+                ->setTemplateOptions([
+                    'area' => 'adminhtml',
+                    'store' => $storeId
+                ])
+                ->setTemplateVars($templateVars)
+                ->setFromByScope($this->getSender())
+                ->addTo($recipients);
+            
+            $transport = $this->transportBuilder->getTransport();
+            $transport->sendMessage();
+            
+            $this->inlineTranslation->resume();
+            
+        } catch (\Exception $e) {
+            $this->inlineTranslation->resume();
+            $this->logger->error('Failed to send critical alert email: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function sendProcessSummary(NotificationSummaryInterface $summary): void
+    {
+        if (!$this->shouldSendProcessSummary()) {
+            return;
+        }
+        
+        try {
+            $this->inlineTranslation->suspend();
+            
+            $storeId = $this->storeManager->getStore()->getId();
+            $recipients = $this->getRecipients();
+            
+            if (empty($recipients)) {
+                return;
+            }
+            
+            // Calculate metrics
+            $executionTime = $summary->getExecutionTime() ?: 0;
+            $peakMemory = $summary->getPeakMemory() ?: 0;
+            
+            // Prepare email variables
+            $templateVars = [
+                'summary' => $summary,
+                'profile_name' => $this->getProfileName($summary->getProfileId()),
+                'process_id' => $summary->getProcessId(),
+                'status' => $summary->getStatus(),
+                'total_processed' => $summary->getTotalProcessed(),
+                'total_success' => $summary->getTotalSuccess(),
+                'total_warnings' => $summary->getTotalWarnings(),
+                'total_errors' => $summary->getTotalErrors(),
+                'total_critical' => $summary->getTotalCritical(),
+                'started_at' => $summary->getStartedAt(),
+                'finished_at' => $summary->getFinishedAt(),
+                'execution_time' => $this->formatExecutionTime($executionTime),
+                'peak_memory' => $this->formatBytes($peakMemory),
+                'has_errors' => $summary->getTotalErrors() > 0 || $summary->getTotalCritical() > 0,
+                'has_warnings' => $summary->getTotalWarnings() > 0
+            ];
+            
+            // Send email
+            $this->transportBuilder
+                ->setTemplateIdentifier(self::EMAIL_TEMPLATE_PROCESS_SUMMARY)
+                ->setTemplateOptions([
+                    'area' => 'adminhtml',
+                    'store' => $storeId
+                ])
+                ->setTemplateVars($templateVars)
+                ->setFromByScope($this->getSender())
+                ->addTo($recipients);
+            
+            $transport = $this->transportBuilder->getTransport();
+            $transport->sendMessage();
+            
+            $this->inlineTranslation->resume();
+            
+        } catch (\Exception $e) {
+            $this->inlineTranslation->resume();
+            $this->logger->error('Failed to send process summary email: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function sendBatchNotification(array $notifications): void
+    {
+        if (!$this->isEmailEnabled() || empty($notifications)) {
+            return;
+        }
+        
+        try {
+            $this->inlineTranslation->suspend();
+            
+            $storeId = $this->storeManager->getStore()->getId();
+            $recipients = $this->getRecipients();
+            
+            if (empty($recipients)) {
+                return;
+            }
+            
+            // Group notifications by severity
+            $grouped = [
+                'critical' => [],
+                'error' => [],
+                'warning' => [],
+                'notice' => []
+            ];
+            
+            foreach ($notifications as $notification) {
+                $severity = $notification->getSeverity();
+                if (isset($grouped[$severity])) {
+                    $grouped[$severity][] = $notification;
+                }
+            }
+            
+            // Prepare email variables
+            $templateVars = [
+                'total_notifications' => count($notifications),
+                'critical_count' => count($grouped['critical']),
+                'error_count' => count($grouped['error']),
+                'warning_count' => count($grouped['warning']),
+                'notice_count' => count($grouped['notice']),
+                'notifications_by_severity' => $grouped,
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            
+            // Send email
+            $this->transportBuilder
+                ->setTemplateIdentifier(self::EMAIL_TEMPLATE_BATCH_SUMMARY)
+                ->setTemplateOptions([
+                    'area' => 'adminhtml',
+                    'store' => $storeId
+                ])
+                ->setTemplateVars($templateVars)
+                ->setFromByScope($this->getSender())
+                ->addTo($recipients);
+            
+            $transport = $this->transportBuilder->getTransport();
+            $transport->sendMessage();
+            
+            $this->inlineTranslation->resume();
+            
+        } catch (\Exception $e) {
+            $this->inlineTranslation->resume();
+            $this->logger->error('Failed to send batch notification email: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Check if email notifications are enabled
+     *
+     * @return bool
+     */
+    private function isEmailEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_ENABLED, ScopeInterface::SCOPE_STORE);
+    }
+    
+    /**
+     * Get email recipients
+     *
+     * @return array
+     */
+    private function getRecipients(): array
+    {
+        $recipients = $this->scopeConfig->getValue(self::XML_PATH_EMAIL_RECIPIENT, ScopeInterface::SCOPE_STORE);
+        if (!$recipients) {
+            return [];
+        }
+        
+        return array_map('trim', explode(',', $recipients));
+    }
+    
+    /**
+     * Get email sender
+     *
+     * @return string
+     */
+    private function getSender(): string
+    {
+        return $this->scopeConfig->getValue(self::XML_PATH_EMAIL_SENDER, ScopeInterface::SCOPE_STORE) ?: 'general';
+    }
+    
+    /**
+     * Get profile name by ID
+     *
+     * @param int|null $profileId
+     * @return string
+     */
+    private function getProfileName(?int $profileId): string
+    {
+        if (!$profileId) {
+            return 'Unknown Profile';
+        }
+        
+        try {
+            $profile = $this->profileRepository->getById($profileId);
+            return $profile->getName() ?: 'Profile #' . $profileId;
+        } catch (\Exception $e) {
+            return 'Profile #' . $profileId;
+        }
+    }
+    
+    /**
+     * Format execution time
+     *
+     * @param float $seconds
+     * @return string
+     */
+    private function formatExecutionTime(float $seconds): string
+    {
+        if ($seconds < 60) {
+            return sprintf('%.2f seconds', $seconds);
+        }
+        
+        $minutes = floor($seconds / 60);
+        $seconds = $seconds % 60;
+        
+        return sprintf('%d minutes %.2f seconds', $minutes, $seconds);
+    }
+    
+    /**
+     * Format bytes to human readable
+     *
+     * @param int $bytes
+     * @return string
+     */
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = 0;
+        
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        
+        return sprintf('%.2f %s', $bytes, $units[$i]);
+    }
+}
