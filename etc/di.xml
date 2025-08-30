@@ -36,6 +36,13 @@
                 sortOrder="10"/>
     </type>
     
+    <!-- Collect Management Plugins -->
+    <type name="SoftCommerce\PlentyProfile\Model\CollectManagementInterface">
+        <plugin name="profile_notification_collect_logger" 
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin" 
+                sortOrder="10"/>
+    </type>
+    
     <!-- Logger Configuration -->
     <virtualType name="SoftCommerce\ProfileNotification\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
