@@ -37,7 +37,7 @@
     </type>
     
     <!-- Collect Management Plugins -->
-    <type name="SoftCommerce\PlentyProfile\Model\CollectManagementInterface">
+    <type name="SoftCommerce\PlentyProfile\Model\AbstractCollectManagement">
         <plugin name="profile_notification_collect_logger" 
                 type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin" 
                 sortOrder="10"/>
