@@ -29,11 +29,11 @@ class Sender implements SenderInterface
     private const XML_PATH_EMAIL_THRESHOLD = 'softcommerce_profile_notification/email/threshold';
     private const XML_PATH_EMAIL_BATCH_ENABLED = 'softcommerce_profile_notification/email/batch_enabled';
     private const XML_PATH_EMAIL_REAL_TIME_CRITICAL = 'softcommerce_profile_notification/email/real_time_critical';
-    
+
     private const EMAIL_TEMPLATE_CRITICAL_ALERT = 'profile_notification_critical_alert';
     private const EMAIL_TEMPLATE_PROCESS_SUMMARY = 'profile_notification_process_summary';
     private const EMAIL_TEMPLATE_BATCH_SUMMARY = 'profile_notification_batch_summary';
-    
+
     /**
      * @param TransportBuilder $transportBuilder
      * @param StateInterface $inlineTranslation
@@ -51,16 +51,16 @@ class Sender implements SenderInterface
         private LoggerInterface $logger
     ) {
     }
-    
+
     /**
      * @inheritdoc
      */
     public function isRealTimeCriticalEnabled(): bool
     {
-        return $this->isEmailEnabled() && 
+        return $this->isEmailEnabled() &&
                $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_REAL_TIME_CRITICAL, ScopeInterface::SCOPE_STORE);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -69,11 +69,11 @@ class Sender implements SenderInterface
         if (!$this->isEmailEnabled()) {
             return false;
         }
-        
+
         $threshold = $this->scopeConfig->getValue(self::XML_PATH_EMAIL_THRESHOLD, ScopeInterface::SCOPE_STORE);
         return in_array($threshold, ['all', 'summary']);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -82,17 +82,17 @@ class Sender implements SenderInterface
         if (!$this->isRealTimeCriticalEnabled()) {
             return;
         }
-        
+
         try {
             $this->inlineTranslation->suspend();
-            
+
             $storeId = $this->storeManager->getStore()->getId();
             $recipients = $this->getRecipients();
-            
+
             if (empty($recipients)) {
                 return;
             }
-            
+
             // Prepare email variables
             $templateVars = [
                 'message' => $message,
@@ -106,7 +106,7 @@ class Sender implements SenderInterface
                 'exception_class' => $context['exception_class'] ?? null,
                 'stack_trace' => $context['stack_trace'] ?? null
             ];
-            
+
             // Send email
             $this->transportBuilder
                 ->setTemplateIdentifier(self::EMAIL_TEMPLATE_CRITICAL_ALERT)
@@ -117,18 +117,18 @@ class Sender implements SenderInterface
                 ->setTemplateVars($templateVars)
                 ->setFromByScope($this->getSender())
                 ->addTo($recipients);
-            
+
             $transport = $this->transportBuilder->getTransport();
             $transport->sendMessage();
-            
+
             $this->inlineTranslation->resume();
-            
+
         } catch (\Exception $e) {
             $this->inlineTranslation->resume();
             $this->logger->error('Failed to send critical alert email: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -137,21 +137,21 @@ class Sender implements SenderInterface
         if (!$this->shouldSendProcessSummary()) {
             return;
         }
-        
+
         try {
             $this->inlineTranslation->suspend();
-            
+
             $storeId = $this->storeManager->getStore()->getId();
             $recipients = $this->getRecipients();
-            
+
             if (empty($recipients)) {
                 return;
             }
-            
+
             // Calculate metrics
             $executionTime = $summary->getExecutionTime() ?: 0;
             $peakMemory = $summary->getPeakMemory() ?: 0;
-            
+
             // Prepare email variables
             $templateVars = [
                 'summary' => $summary,
@@ -170,7 +170,7 @@ class Sender implements SenderInterface
                 'has_errors' => $summary->getTotalErrors() > 0 || $summary->getTotalCritical() > 0,
                 'has_warnings' => $summary->getTotalWarnings() > 0
             ];
-            
+
             // Send email
             $this->transportBuilder
                 ->setTemplateIdentifier(self::EMAIL_TEMPLATE_PROCESS_SUMMARY)
@@ -181,18 +181,18 @@ class Sender implements SenderInterface
                 ->setTemplateVars($templateVars)
                 ->setFromByScope($this->getSender())
                 ->addTo($recipients);
-            
+
             $transport = $this->transportBuilder->getTransport();
             $transport->sendMessage();
-            
+
             $this->inlineTranslation->resume();
-            
+
         } catch (\Exception $e) {
             $this->inlineTranslation->resume();
             $this->logger->error('Failed to send process summary email: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -201,17 +201,17 @@ class Sender implements SenderInterface
         if (!$this->isEmailEnabled() || empty($notifications)) {
             return;
         }
-        
+
         try {
             $this->inlineTranslation->suspend();
-            
+
             $storeId = $this->storeManager->getStore()->getId();
             $recipients = $this->getRecipients();
-            
+
             if (empty($recipients)) {
                 return;
             }
-            
+
             // Group notifications by severity
             $grouped = [
                 'critical' => [],
@@ -219,14 +219,14 @@ class Sender implements SenderInterface
                 'warning' => [],
                 'notice' => []
             ];
-            
+
             foreach ($notifications as $notification) {
                 $severity = $notification->getSeverity();
                 if (isset($grouped[$severity])) {
                     $grouped[$severity][] = $notification;
                 }
             }
-            
+
             // Prepare email variables
             $templateVars = [
                 'total_notifications' => count($notifications),
@@ -237,7 +237,7 @@ class Sender implements SenderInterface
                 'notifications_by_severity' => $grouped,
                 'timestamp' => date('Y-m-d H:i:s')
             ];
-            
+
             // Send email
             $this->transportBuilder
                 ->setTemplateIdentifier(self::EMAIL_TEMPLATE_BATCH_SUMMARY)
@@ -248,18 +248,18 @@ class Sender implements SenderInterface
                 ->setTemplateVars($templateVars)
                 ->setFromByScope($this->getSender())
                 ->addTo($recipients);
-            
+
             $transport = $this->transportBuilder->getTransport();
             $transport->sendMessage();
-            
+
             $this->inlineTranslation->resume();
-            
+
         } catch (\Exception $e) {
             $this->inlineTranslation->resume();
             $this->logger->error('Failed to send batch notification email: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Check if email notifications are enabled
      *
@@ -269,7 +269,7 @@ class Sender implements SenderInterface
     {
         return $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_ENABLED, ScopeInterface::SCOPE_STORE);
     }
-    
+
     /**
      * Get email recipients
      *
@@ -281,10 +281,10 @@ class Sender implements SenderInterface
         if (!$recipients) {
             return [];
         }
-        
+
         return array_map('trim', explode(',', $recipients));
     }
-    
+
     /**
      * Get email sender
      *
@@ -294,7 +294,7 @@ class Sender implements SenderInterface
     {
         return $this->scopeConfig->getValue(self::XML_PATH_EMAIL_SENDER, ScopeInterface::SCOPE_STORE) ?: 'general';
     }
-    
+
     /**
      * Get profile name by ID
      *
@@ -306,7 +306,7 @@ class Sender implements SenderInterface
         if (!$profileId) {
             return 'Unknown Profile';
         }
-        
+
         try {
             $profile = $this->profileRepository->getById($profileId);
             return $profile->getName() ?: 'Profile #' . $profileId;
@@ -314,7 +314,7 @@ class Sender implements SenderInterface
             return 'Profile #' . $profileId;
         }
     }
-    
+
     /**
      * Format execution time
      *
@@ -326,13 +326,13 @@ class Sender implements SenderInterface
         if ($seconds < 60) {
             return sprintf('%.2f seconds', $seconds);
         }
-        
+
         $minutes = floor($seconds / 60);
         $seconds = $seconds % 60;
-        
+
         return sprintf('%d minutes %.2f seconds', $minutes, $seconds);
     }
-    
+
     /**
      * Format bytes to human readable
      *
@@ -343,12 +343,12 @@ class Sender implements SenderInterface
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $i = 0;
-        
+
         while ($bytes >= 1024 && $i < count($units) - 1) {
             $bytes /= 1024;
             $i++;
         }
-        
+
         return sprintf('%.2f %s', $bytes, $units[$i]);
     }
 }

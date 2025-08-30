@@ -25,6 +25,7 @@ class NotificationManagement implements NotificationManagementInterface
 {
     private ?int $currentProfileId = null;
     private ?string $currentProcessId = null;
+    private ?string $currentTypeId = null;
     private array $currentContext = [];
     
     /**
@@ -136,10 +137,12 @@ class NotificationManagement implements NotificationManagementInterface
         
         $this->setProfileId($profileId);
         $this->setProcessId($processId);
+        $this->currentTypeId = $typeId;
         
         $this->notice(sprintf('Started %s process for profile ID %d', $typeId, $profileId), [
             'type' => 'process_start',
-            'type_id' => $typeId
+            'type_id' => $typeId,
+            'entity_type' => $typeId
         ]);
         
         return $processId;
@@ -177,12 +180,19 @@ class NotificationManagement implements NotificationManagementInterface
             $this->logger->error('Failed to update process summary: ' . $e->getMessage());
         }
         
-        $this->notice(sprintf('Process completed with status: %s', $status), [
+        $message = $this->currentTypeId 
+            ? sprintf('%s process completed with status: %s', $this->currentTypeId, $status)
+            : sprintf('Process completed with status: %s', $status);
+            
+        $this->notice($message, [
             'type' => 'process_end',
+            'type_id' => $this->currentTypeId,
+            'entity_type' => $this->currentTypeId,
             'status' => $status
         ]);
         
         $this->currentProcessId = null;
+        $this->currentTypeId = null;
     }
     
     /**

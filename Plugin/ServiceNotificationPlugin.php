@@ -32,6 +32,7 @@ class ServiceNotificationPlugin
      * @param \Closure $proceed
      * @param mixed ...$args
      * @return void
+     * @throws LocalizedException
      */
     public function aroundExecute(
         ServiceInterface $subject,
@@ -91,6 +92,7 @@ class ServiceNotificationPlugin
     {
         $messageStorage = $service->getMessageStorage();
         $data = $messageStorage->getData();
+        $typeId = $service->getTypeId();
 
         // MessageStorage data is grouped by entity type (e.g., 'plenty_stock_import')
         foreach ($data as $entityType => $messages) {
@@ -105,14 +107,20 @@ class ServiceNotificationPlugin
                 }
 
                 $severity = $this->mapStatusToSeverity($message['status']);
-                
-                // Convert entity type to string if it's numeric (entity ID)
-                $entityTypeStr = is_numeric($entityType) ? 'entity_' . $entityType : (string)$entityType;
-                
+
+                // Determine the actual entity type
+                $actualEntityType = $this->determineEntityType($service, $entityType, $message);
+
+                // Use entityType as entity_id if it looks like an ID
+                $entityId = $message['entity'] ?? $message['entity_id'] ?? null;
+                if (!$entityId && (is_numeric($entityType) || str_contains((string)$entityType, '-'))) {
+                    $entityId = $entityType;
+                }
+
                 // Build context from message data
                 $context = [
-                    'entity_id' => $message['entity'] ?? $message['entity_id'] ?? $entityType,
-                    'entity_type' => $entityTypeStr,
+                    'entity_id' => $entityId,
+                    'entity_type' => $actualEntityType,
                     'status' => $message['status']
                 ];
 
@@ -124,6 +132,12 @@ class ServiceNotificationPlugin
                 // Skip if this is just a summary message that duplicates processor logs
                 if ($this->shouldSkipMessage($message, $entityType)) {
                     continue;
+                }
+
+                // Handle summary messages separately - preserve entity type
+                if (isset($message['summary']) && $message['summary']) {
+                    $context['entity_type'] = $typeId; // Use service type for summaries
+                    $context['entity_id'] = $typeId . '_summary';
                 }
 
                 $method = $severity;
@@ -145,7 +159,7 @@ class ServiceNotificationPlugin
     {
         // Convert message to string if it's a Phrase object
         $messageText = isset($message['message']) ? (string)$message['message'] : '';
-        
+
         // Skip summary messages that duplicate what we already logged
         if (str_contains($messageText, 'completed successfully') &&
             str_contains($messageText, 'Total Items:')) {
@@ -205,6 +219,14 @@ class ServiceNotificationPlugin
      */
     private function getServiceTypeId(ServiceInterface $service): string
     {
+        if ($service->getTypeId()) {
+            return $service->getTypeId();
+        }
+
+        if ($service->getContext()?->getTypeId()) {
+            return $service->getContext()->getTypeId();
+        }
+
         $className = get_class($service);
 
         // Extract type from class name (e.g., OrderExportService -> order_export)
@@ -218,5 +240,49 @@ class ServiceNotificationPlugin
         // Fallback to simple class name
         $parts = explode('\\', $className);
         return strtolower(end($parts));
+    }
+
+    /**
+     * Determine entity type from service type and message context
+     *
+     * @param ServiceInterface $service
+     * @param string|int $storageKey
+     * @param array $message
+     * @return string
+     */
+    private function determineEntityType(ServiceInterface $service, string|int $storageKey, array $message): string
+    {
+        // Check if entity type is already in the message
+        if (isset($message['entity_type']) && is_string($message['entity_type'])) {
+            return $message['entity_type'];
+        }
+
+        // Get service type to help determine entity type
+        $serviceType = $this->getServiceTypeId($service);
+
+        // Extract entity type from service type
+        if (str_contains($serviceType, 'order')) {
+            return 'order';
+        } elseif (str_contains($serviceType, 'product') || str_contains($serviceType, 'item')) {
+            return 'product';
+        } elseif (str_contains($serviceType, 'customer')) {
+            return 'customer';
+        } elseif (str_contains($serviceType, 'stock')) {
+            return 'stock';
+        } elseif (str_contains($serviceType, 'category')) {
+            return 'category';
+        } elseif (str_contains($serviceType, 'invoice')) {
+            return 'invoice';
+        } elseif (str_contains($serviceType, 'shipment')) {
+            return 'shipment';
+        }
+
+        // If storage key is not numeric and not an ID pattern, use it as entity type
+        if (!is_numeric($storageKey) && !str_contains((string)$storageKey, '-')) {
+            return (string)$storageKey;
+        }
+
+        // Default fallback
+        return $service->getTypeId() ?: 'entity';
     }
 }

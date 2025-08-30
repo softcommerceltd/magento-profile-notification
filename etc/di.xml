@@ -86,4 +86,13 @@
             <argument name="resourceModel" xsi:type="string">SoftCommerce\ProfileNotification\Model\ResourceModel\NotificationSummary</argument>
         </arguments>
     </virtualType>
+    
+    <!-- Console Commands -->
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="softcommerce_notification_send_batch_emails" xsi:type="object">SoftCommerce\ProfileNotification\Console\Command\SendBatchEmailsCommand</item>
+            </argument>
+        </arguments>
+    </type>
 </config>
