@@ -40,18 +40,13 @@ class CollectNotificationPlugin
         $entityType = $this->extractEntityType($subject);
         $startTime = microtime(true);
         $startMemory = memory_get_usage(true);
-        
+
+        var_dump(__METHOD__);
+
         try {
-            // Check if this service has a profile ID method
-            $profileId = null;
-            if (method_exists($subject, 'getProfileId')) {
-                try {
-                    $profileId = $subject->getProfileId();
-                } catch (\Exception $e) {
-                    // Profile ID not available
-                }
-            }
-            
+            // Get profile ID from the collect service
+            $profileId = $subject->getProfileId();
+
             // Start process tracking if we have a profile ID
             $processId = null;
             if ($profileId && $this->notificationManager) {
@@ -60,33 +55,33 @@ class CollectNotificationPlugin
                     $entityType . '_collect'
                 );
             }
-            
+
             // Execute the collect process
             $proceed(...$args);
-            
+
             // Log completion
             $executionTime = microtime(true) - $startTime;
             $peakMemory = memory_get_peak_usage(true) - $startMemory;
-            
+
             $context = [
                 'entity_type' => $entityType,
                 'execution_time' => round($executionTime, 2),
                 'peak_memory' => $this->formatBytes($peakMemory),
                 'collect_stage' => 'complete'
             ];
-            
+
             // Get counts from storage
             $responseStorage = $subject->getResponseStorage();
             if ($responseStorage && method_exists($responseStorage, 'getData')) {
                 $responseData = $responseStorage->getData();
                 $context['total_collected'] = is_array($responseData) ? count($responseData) : 0;
             }
-            
+
             $this->notificationManager->notice(
                 sprintf('%s collect completed in %.2f seconds', ucfirst($entityType), $executionTime),
                 $context
             );
-            
+
             // Update process summary if we have a process ID
             if ($processId) {
                 $this->notificationManager->setSummary($processId, [
@@ -94,13 +89,13 @@ class CollectNotificationPlugin
                     'peak_memory' => memory_get_peak_usage(true) - $startMemory,
                     'execution_time' => $executionTime
                 ]);
-                
+
                 $this->notificationManager->endProcess($processId, 'success');
             }
-            
+
             // Log any messages from the collect process
             $this->logMessagesFromStorage($subject);
-            
+
         } catch (\Throwable $e) {
             $context = [
                 'service' => get_class($subject),
@@ -108,17 +103,17 @@ class CollectNotificationPlugin
                 'method' => 'execute',
                 'arguments' => $this->sanitizeArguments($args)
             ];
-            
+
             $this->notificationManager->logException($e, $context);
-            
+
             // End process with error status if we have a process ID
             if (isset($processId) && $processId) {
                 $this->notificationManager->endProcess($processId, 'error');
             }
-            
+
             // Log any messages that were added before the error
             $this->logMessagesFromStorage($subject);
-            
+
             throw $e;
         }
     }
@@ -140,7 +135,7 @@ class CollectNotificationPlugin
     ): void {
         try {
             $proceed($response, $fields);
-            
+
             // Log messages from message storage after save
             $this->logMessagesFromStorage($subject);
         } catch (\Throwable $e) {
@@ -151,12 +146,12 @@ class CollectNotificationPlugin
                 'response_count' => count($response),
                 'fields' => $fields
             ];
-            
+
             $this->notificationManager->logException($e, $context);
-            
+
             // Log any messages that were added before the error
             $this->logMessagesFromStorage($subject);
-            
+
             throw $e;
         }
     }
@@ -176,10 +171,10 @@ class CollectNotificationPlugin
     ): array {
         try {
             $result = $proceed($response);
-            
+
             // Log any messages that were added during data building
             $this->logMessagesFromStorage($subject);
-            
+
             return $result;
         } catch (\Throwable $e) {
             $context = [
@@ -187,12 +182,12 @@ class CollectNotificationPlugin
                 'method' => 'buildDataForSave',
                 'response_count' => count($response)
             ];
-            
+
             $this->notificationManager->logException($e, $context);
-            
+
             // Log any messages that were added before the error
             $this->logMessagesFromStorage($subject);
-            
+
             throw $e;
         }
     }
@@ -212,13 +207,13 @@ class CollectNotificationPlugin
     ): void {
         try {
             $proceed($response);
-            
+
             // Log cleanup completion
             $this->notificationManager->debug('Collect cleanup completed', [
                 'service' => get_class($subject),
                 'response_count' => count($response)
             ]);
-            
+
             // Log any messages from the cleanup process
             $this->logMessagesFromStorage($subject);
         } catch (\Throwable $e) {
@@ -227,7 +222,7 @@ class CollectNotificationPlugin
                 'method' => 'cleanup',
                 'response_count' => count($response)
             ];
-            
+
             $this->notificationManager->logException($e, $context);
             throw $e;
         }
@@ -243,42 +238,42 @@ class CollectNotificationPlugin
     {
         $messageStorage = $collectService->getMessageStorage();
         $data = $messageStorage->getData();
-        
+
         // Extract entity type from class name
         $entityType = $this->extractEntityType($collectService);
-        
+
         // Process messages similar to ServiceNotificationPlugin
         foreach ($data as $key => $messages) {
             if (!is_array($messages)) {
                 continue;
             }
-            
+
             foreach ($messages as $message) {
                 if (!is_array($message) || !isset($message['message']) || !isset($message['status'])) {
                     continue;
                 }
-                
+
                 $severity = $this->mapStatusToSeverity($message['status']);
-                
+
                 // Build context
                 $context = [
                     'entity_type' => $entityType,
                     'status' => $message['status'],
                     'collect_stage' => 'collect'
                 ];
-                
+
                 // Add entity ID if available
                 if (isset($message['entity']) || isset($message['entity_id'])) {
                     $context['entity_id'] = $message['entity'] ?? $message['entity_id'];
                 } elseif (is_numeric($key) || str_contains((string)$key, '-')) {
                     $context['entity_id'] = $key;
                 }
-                
+
                 // Add any additional data from the message
                 if (isset($message['data']) && is_array($message['data'])) {
                     $context = array_merge($context, $message['data']);
                 }
-                
+
                 // Convert message to string if it's a Phrase object
                 $messageText = (string)$message['message'];
                 $method = $severity;
@@ -296,7 +291,7 @@ class CollectNotificationPlugin
     private function extractEntityType(CollectManagementInterface $collectService): string
     {
         $className = get_class($collectService);
-        
+
         // Handle specific known patterns
         if (str_contains($className, 'OrderCollect')) {
             return 'order';
@@ -313,12 +308,12 @@ class CollectNotificationPlugin
         } elseif (str_contains($className, 'AttributeCollect')) {
             return 'attribute';
         }
-        
+
         // Try to extract from class name pattern
         if (preg_match('/([A-Z][a-z]+)Collect/', $className, $matches)) {
             return strtolower($matches[1]);
         }
-        
+
         // Fallback
         return 'entity';
     }
@@ -350,12 +345,12 @@ class CollectNotificationPlugin
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $i = 0;
-        
+
         while ($bytes >= 1024 && $i < count($units) - 1) {
             $bytes /= 1024;
             $i++;
         }
-        
+
         return sprintf('%.2f %s', $bytes, $units[$i]);
     }
 
@@ -368,7 +363,7 @@ class CollectNotificationPlugin
     private function sanitizeArguments(array $args): array
     {
         $sanitized = [];
-        
+
         foreach ($args as $key => $arg) {
             if (is_object($arg)) {
                 $sanitized[$key] = get_class($arg);
@@ -380,7 +375,7 @@ class CollectNotificationPlugin
                 $sanitized[$key] = $arg;
             }
         }
-        
+
         return $sanitized;
     }
 }
