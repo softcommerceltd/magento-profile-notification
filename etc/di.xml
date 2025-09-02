@@ -43,6 +43,12 @@
                 type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
                 sortOrder="10"/>
     </type>
+    
+    <type name="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin">
+        <arguments>
+            <argument name="logger" xsi:type="object">SoftCommerce\ProfileNotification\Logger</argument>
+        </arguments>
+    </type>
 
     <!--<type name="SoftCommerce\PlentyProfile\Model\AbstractCollectManagement">
         <plugin name="profile_notification_collect_logger"

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace SoftCommerce\ProfileNotification\Plugin;
 
+use Psr\Log\LoggerInterface;
 use SoftCommerce\PlentyProfile\Model\CollectManagementInterface;
 use SoftCommerce\ProfileNotification\Api\NotificationManagementInterface;
 
@@ -18,9 +19,11 @@ class CollectNotificationPlugin
 {
     /**
      * @param NotificationManagementInterface $notificationManager
+     * @param LoggerInterface $logger
      */
     public function __construct(
-        private NotificationManagementInterface $notificationManager
+        private NotificationManagementInterface $notificationManager,
+        private LoggerInterface $logger
     ) {
     }
 
@@ -41,20 +44,34 @@ class CollectNotificationPlugin
         $startTime = microtime(true);
         $startMemory = memory_get_usage(true);
 
-        var_dump(__METHOD__);
-
         try {
             // Get profile ID from the collect service
             $profileId = $subject->getProfileId();
 
-            // Start process tracking if we have a profile ID
-            $processId = null;
-            if ($profileId && $this->notificationManager) {
-                $processId = $this->notificationManager->startProcess(
-                    $profileId,
-                    $entityType . '_collect'
+            // Profile ID is required for notification tracking
+            if (!$profileId) {
+                // Log to file but skip notification database tracking
+                $this->logToFile(
+                    sprintf('WARNING: %s collect service running without profile context. Notifications will not be tracked in database.', ucfirst($entityType))
                 );
+                
+                // Execute without notification tracking
+                $proceed(...$args);
+                
+                // Log completion to file
+                $executionTime = microtime(true) - $startTime;
+                $this->logToFile(
+                    sprintf('%s collect completed in %.2f seconds (no profile context)', ucfirst($entityType), $executionTime)
+                );
+                
+                return;
             }
+
+            // Start process tracking with valid profile ID
+            $processId = $this->notificationManager->startProcess(
+                $profileId,
+                $entityType . '_collect'
+            );
 
             // Execute the collect process
             $proceed(...$args);
@@ -127,7 +144,7 @@ class CollectNotificationPlugin
      * @param array $fields
      * @return void
      */
-    public function aroundSaveData(
+    /*public function aroundSaveData(
         CollectManagementInterface $subject,
         \Closure $proceed,
         array $response,
@@ -154,7 +171,7 @@ class CollectNotificationPlugin
 
             throw $e;
         }
-    }
+    }*/
 
     /**
      * Intercept buildDataForSave method to catch data preparation errors
@@ -164,7 +181,7 @@ class CollectNotificationPlugin
      * @param array $response
      * @return array
      */
-    public function aroundBuildDataForSave(
+    /*public function aroundBuildDataForSave(
         CollectManagementInterface $subject,
         \Closure $proceed,
         array $response
@@ -190,7 +207,7 @@ class CollectNotificationPlugin
 
             throw $e;
         }
-    }
+    }*/
 
     /**
      * Intercept cleanup method to log cleanup operations
@@ -200,7 +217,7 @@ class CollectNotificationPlugin
      * @param array $response
      * @return void
      */
-    public function aroundCleanup(
+    /*public function aroundCleanup(
         CollectManagementInterface $subject,
         \Closure $proceed,
         array $response
@@ -226,7 +243,7 @@ class CollectNotificationPlugin
             $this->notificationManager->logException($e, $context);
             throw $e;
         }
-    }
+    }*/
 
     /**
      * Log messages from collect service message storage
@@ -377,5 +394,16 @@ class CollectNotificationPlugin
         }
 
         return $sanitized;
+    }
+    
+    /**
+     * Log message to file when profile context is not available
+     *
+     * @param string $message
+     * @return void
+     */
+    private function logToFile(string $message): void
+    {
+        $this->logger->warning($message);
     }
 }
