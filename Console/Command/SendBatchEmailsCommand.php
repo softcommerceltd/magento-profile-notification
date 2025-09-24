@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace SoftCommerce\ProfileNotification\Console\Command;
 
+use Magento\Framework\Exception\LocalizedException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -108,7 +109,7 @@ class SendBatchEmailsCommand extends Command
         $limit = (int) $input->getOption('limit');
 
         // Check if enabled
-        if (!$force && !$this->isEnabled()) {
+        if (!$force && !$this->isActive()) {
             $output->writeln('<error>Batch emails are disabled in configuration. Use --force to override.</error>');
             return Command::FAILURE;
         }
@@ -145,17 +146,17 @@ class SendBatchEmailsCommand extends Command
                 '<info>Sending batch email with %d notifications...</info>',
                 count($notifications)
             ));
-            
+
             // Get default store for CLI context
             $defaultStore = $this->storeManager->getDefaultStoreView();
             if (!$defaultStore) {
                 $stores = $this->storeManager->getStores();
                 $defaultStore = reset($stores);
             }
-            
+
             // Set current store for proper email configuration
             $this->storeManager->setCurrentStore($defaultStore->getId());
-            
+
             // Send the batch email
             $this->emailSender->sendBatchNotification($notifications);
 
@@ -183,7 +184,7 @@ class SendBatchEmailsCommand extends Command
      *
      * @return bool
      */
-    public function isEnabled(): bool
+    public function isActive(): bool
     {
         return $this->scopeConfig->isSetFlag(self::XML_PATH_ENABLED, ScopeInterface::SCOPE_STORE) &&
                $this->scopeConfig->isSetFlag(self::XML_PATH_BATCH_ENABLED, ScopeInterface::SCOPE_STORE);
@@ -195,6 +196,7 @@ class SendBatchEmailsCommand extends Command
      * @param string|null $severityOverride
      * @param string|null $intervalOverride
      * @return array
+     * @throws LocalizedException
      */
     private function getUnsentNotifications(?string $severityOverride = null, ?string $intervalOverride = null): array
     {

@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "~8.1.0||~8.2.0||~8.3.0",
+        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4",
         "magento/framework": "*",
         "softcommerce/module-core": "*",
         "softcommerce/module-profile": "*",
@@ -23,5 +23,6 @@
         "psr-4": {
             "SoftCommerce\\ProfileNotification\\": ""
         }
-    }
+    },
+    "version": "1.0.0"
 }

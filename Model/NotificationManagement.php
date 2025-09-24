@@ -338,7 +338,8 @@ class NotificationManagement implements NotificationManagementInterface
         $sensitiveKeys = ['password', 'token', 'secret', 'key', 'authorization'];
         
         foreach ($context as $key => $value) {
-            $lowerKey = strtolower($key);
+            // Convert key to string to handle both string and numeric keys
+            $lowerKey = strtolower((string) $key);
             foreach ($sensitiveKeys as $sensitive) {
                 if (str_contains($lowerKey, $sensitive)) {
                     $context[$key] = '***REDACTED***';
