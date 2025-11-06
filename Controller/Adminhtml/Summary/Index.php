@@ -21,18 +21,18 @@ class Index extends Action
      * Authorization level of a basic admin session
      */
     const ADMIN_RESOURCE = 'SoftCommerce_ProfileNotification::notification_summary';
-    
+
     /**
      * @param Context $context
      * @param PageFactory $resultPageFactory
      */
     public function __construct(
         Context $context,
-        private PageFactory $resultPageFactory
+        private readonly PageFactory $resultPageFactory
     ) {
         parent::__construct($context);
     }
-    
+
     /**
      * Execute action
      *
@@ -43,7 +43,7 @@ class Index extends Action
         $resultPage = $this->resultPageFactory->create();
         $resultPage->setActiveMenu('SoftCommerce_Profile::profile_core');
         $resultPage->getConfig()->getTitle()->prepend(__('Process Summary'));
-        
+
         return $resultPage;
     }
 }

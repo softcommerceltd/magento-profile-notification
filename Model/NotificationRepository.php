@@ -34,11 +34,11 @@ class NotificationRepository implements NotificationRepositoryInterface
      * @param CollectionProcessorInterface $collectionProcessor
      */
     public function __construct(
-        private ResourceNotification $resource,
-        private NotificationInterfaceFactory $notificationFactory,
-        private NotificationCollectionFactory $notificationCollectionFactory,
-        private NotificationSearchResultsInterfaceFactory $searchResultsFactory,
-        private CollectionProcessorInterface $collectionProcessor
+        private readonly ResourceNotification $resource,
+        private readonly NotificationInterfaceFactory $notificationFactory,
+        private readonly NotificationCollectionFactory $notificationCollectionFactory,
+        private readonly NotificationSearchResultsInterfaceFactory $searchResultsFactory,
+        private readonly CollectionProcessorInterface $collectionProcessor
     ) {
     }
 
@@ -65,11 +65,11 @@ class NotificationRepository implements NotificationRepositoryInterface
     {
         $notification = $this->notificationFactory->create();
         $this->resource->load($notification, $notificationId);
-        
+
         if (!$notification->getNotificationId()) {
             throw new NoSuchEntityException(__('The notification with ID "%1" doesn\'t exist.', $notificationId));
         }
-        
+
         return $notification;
     }
 
@@ -80,12 +80,12 @@ class NotificationRepository implements NotificationRepositoryInterface
     {
         $collection = $this->notificationCollectionFactory->create();
         $this->collectionProcessor->process($searchCriteria, $collection);
-        
+
         $searchResults = $this->searchResultsFactory->create();
         $searchResults->setSearchCriteria($searchCriteria);
         $searchResults->setItems($collection->getItems());
         $searchResults->setTotalCount($collection->getSize());
-        
+
         return $searchResults;
     }
 

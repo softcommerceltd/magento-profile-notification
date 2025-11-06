@@ -30,8 +30,8 @@ class ProfileName extends Column
     public function __construct(
         ContextInterface $context,
         UiComponentFactory $uiComponentFactory,
-        private ProfileRepositoryInterface $profileRepository,
-        private TypeInstanceOptionsInterface $typeInstanceOptions,
+        private readonly ProfileRepositoryInterface $profileRepository,
+        private readonly TypeInstanceOptionsInterface $typeInstanceOptions,
         array $components = [],
         array $data = []
     ) {

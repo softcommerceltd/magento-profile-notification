@@ -21,10 +21,10 @@ class MessageStorageObserver implements ObserverInterface
      * @param NotificationManagementInterface $notificationManager
      */
     public function __construct(
-        private NotificationManagementInterface $notificationManager
+        private readonly NotificationManagementInterface $notificationManager
     ) {
     }
-    
+
     /**
      * Execute observer
      *
@@ -37,34 +37,34 @@ class MessageStorageObserver implements ObserverInterface
         if (!$message || !is_array($message)) {
             return;
         }
-        
+
         // Extract message details
         $messageText = $message['message'] ?? '';
         $status = $message['status'] ?? 'notice';
-        
+
         // Build context
         $context = [
             'entity_id' => $message['entity_id'] ?? null,
             'entity_type' => $message['type_id'] ?? null,
             'status' => $status
         ];
-        
+
         // Add any additional data
         if (isset($message['data']) && is_array($message['data'])) {
             $context = array_merge($context, $message['data']);
         }
-        
+
         // Map status to severity and log
         $severity = $this->mapStatusToSeverity($status);
         $method = $severity;
-        
+
         try {
             $this->notificationManager->$method($messageText, $context);
         } catch (\Exception $e) {
             // Silently fail to avoid breaking the main process
         }
     }
-    
+
     /**
      * Map message status to notification severity
      *

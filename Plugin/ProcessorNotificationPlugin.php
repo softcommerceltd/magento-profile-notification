@@ -20,7 +20,7 @@ class ProcessorNotificationPlugin
      * @param NotificationManagementInterface $notificationManager
      */
     public function __construct(
-        private NotificationManagementInterface $notificationManager
+        private readonly NotificationManagementInterface $notificationManager
     ) {
     }
 
@@ -37,7 +37,7 @@ class ProcessorNotificationPlugin
     ) {
         $entityId = null;
         $entityType = $this->extractEntityType($subject);
-        
+
         // Try to get entity ID from processor
         if (method_exists($subject, 'getProcessorId')) {
             $entityId = $subject->getProcessorId();
@@ -46,19 +46,19 @@ class ProcessorNotificationPlugin
         } elseif (method_exists($subject, 'getId')) {
             $entityId = $subject->getId();
         }
-        
+
         $context = [
             'processor' => get_class($subject),
             'entity_type' => $entityType,
             'entity_id' => $entityId
         ];
-        
+
         // Set context for any notifications logged during processing
         $this->notificationManager->setContext($context);
-        
+
         try {
             $result = $proceed();
-            
+
             // Log successful processing at debug level
             if ($entityId) {
                 $this->notificationManager->debug(
@@ -66,21 +66,21 @@ class ProcessorNotificationPlugin
                     $context
                 );
             }
-            
+
             return $result;
-            
+
         } catch (\Throwable $e) {
             // Log the exception with full entity context
             $this->notificationManager->logException($e, array_merge($context, [
                 'error_message' => $e->getMessage(),
                 'error_code' => $e->getCode()
             ]));
-            
+
             // Re-throw to maintain original behavior
             throw $e;
         }
     }
-    
+
     /**
      * Extract entity type from processor class name
      *
@@ -89,8 +89,16 @@ class ProcessorNotificationPlugin
      */
     private function extractEntityType(ProcessorInterface $processor): string
     {
+        if ($processor->getTypeId()) {
+            return $processor->getTypeId();
+        }
+
+        if ($processor->getContext()?->getTypeId()) {
+            return $processor->getContext()->getTypeId();
+        }
+
         $className = get_class($processor);
-        
+
         // Check for specific patterns in class name
         if (str_contains($className, 'Order')) {
             return 'order';
@@ -109,7 +117,7 @@ class ProcessorNotificationPlugin
         } elseif (str_contains($className, 'Credit')) {
             return 'creditmemo';
         }
-        
+
         // Try to extract from namespace
         $parts = explode('\\', $className);
         foreach ($parts as $part) {
@@ -119,7 +127,7 @@ class ProcessorNotificationPlugin
                 return strtolower($type);
             }
         }
-        
+
         // Fallback to generic type
         return 'entity';
     }

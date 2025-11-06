@@ -139,7 +139,7 @@ After each profile run:
 ### API Connection Issues
 1. Look for patterns in error timing
 2. Check for "connection" or "timeout" in messages
-3. Verify PlentyMarkets API credentials
+3. Verify PlentyONE API credentials
 
 ## Troubleshooting
 

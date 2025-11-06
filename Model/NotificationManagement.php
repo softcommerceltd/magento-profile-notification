@@ -25,8 +25,9 @@ class NotificationManagement implements NotificationManagementInterface
 {
     private ?int $currentProfileId = null;
     private ?string $currentProcessId = null;
+    private ?string $currentTypeId = null;
     private array $currentContext = [];
-    
+
     /**
      * @param NotificationRepositoryInterface $notificationRepository
      * @param NotificationInterfaceFactory $notificationFactory
@@ -37,16 +38,16 @@ class NotificationManagement implements NotificationManagementInterface
      * @param LoggerInterface $logger
      */
     public function __construct(
-        private NotificationRepositoryInterface $notificationRepository,
-        private NotificationInterfaceFactory $notificationFactory,
-        private NotificationSummaryInterfaceFactory $summaryFactory,
-        private SummaryResource $summaryResource,
-        private SenderInterface $emailSender,
-        private SerializerInterface $serializer,
-        private LoggerInterface $logger
+        private readonly NotificationRepositoryInterface $notificationRepository,
+        private readonly NotificationInterfaceFactory $notificationFactory,
+        private readonly NotificationSummaryInterfaceFactory $summaryFactory,
+        private readonly SummaryResource $summaryResource,
+        private readonly SenderInterface $emailSender,
+        private readonly SerializerInterface $serializer,
+        private readonly LoggerInterface $logger
     ) {
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -54,7 +55,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->log(self::SEVERITY_DEBUG, $message, $context);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -62,7 +63,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->log(self::SEVERITY_NOTICE, $message, $context);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -70,7 +71,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->log(self::SEVERITY_WARNING, $message, $context);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -78,14 +79,14 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->log(self::SEVERITY_ERROR, $message, $context);
     }
-    
+
     /**
      * @inheritdoc
      */
     public function critical(string $message, array $context = []): void
     {
         $this->log(self::SEVERITY_CRITICAL, $message, $context);
-        
+
         // Send immediate email for critical errors
         try {
             if ($this->emailSender->isRealTimeCriticalEnabled()) {
@@ -95,7 +96,7 @@ class NotificationManagement implements NotificationManagementInterface
             $this->logger->error('Failed to send critical alert email: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -105,18 +106,18 @@ class NotificationManagement implements NotificationManagementInterface
         $context['stack_trace'] = $exception->getTraceAsString();
         $context['file'] = $exception->getFile();
         $context['line'] = $exception->getLine();
-        
+
         $severity = $exception instanceof \Error ? self::SEVERITY_CRITICAL : self::SEVERITY_ERROR;
         $this->log($severity, $exception->getMessage(), $context);
     }
-    
+
     /**
      * @inheritdoc
      */
     public function startProcess(int $profileId, string $typeId): string
     {
         $processId = uniqid('process_' . $profileId . '_', true);
-        
+
         $summary = $this->summaryFactory->create();
         $summary->setProfileId($profileId);
         $summary->setProcessId($processId);
@@ -127,24 +128,26 @@ class NotificationManagement implements NotificationManagementInterface
         $summary->setTotalWarnings(0);
         $summary->setTotalErrors(0);
         $summary->setTotalCritical(0);
-        
+
         try {
             $this->summaryResource->save($summary);
         } catch (\Exception $e) {
             $this->logger->error('Failed to create process summary: ' . $e->getMessage());
         }
-        
+
         $this->setProfileId($profileId);
         $this->setProcessId($processId);
-        
+        $this->currentTypeId = $typeId;
+
         $this->notice(sprintf('Started %s process for profile ID %d', $typeId, $profileId), [
             'type' => 'process_start',
-            'type_id' => $typeId
+            'type_id' => $typeId,
+            'entity_type' => $typeId
         ]);
-        
+
         return $processId;
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -153,21 +156,21 @@ class NotificationManagement implements NotificationManagementInterface
         try {
             $summary = $this->summaryFactory->create();
             $summaryData = $this->summaryResource->loadByProcessId($processId);
-            
+
             if (!empty($summaryData)) {
                 $summary->setData($summaryData);
                 $summary->setStatus($status);
                 $summary->setFinishedAt(date('Y-m-d H:i:s'));
                 $summary->setPeakMemory(memory_get_peak_usage(true));
-                
+
                 if ($summary->getStartedAt()) {
                     $startTime = strtotime($summary->getStartedAt());
                     $endTime = time();
                     $summary->setExecutionTime($endTime - $startTime);
                 }
-                
+
                 $this->summaryResource->save($summary);
-                
+
                 // Send process summary email if configured
                 if ($this->emailSender->shouldSendProcessSummary()) {
                     $this->emailSender->sendProcessSummary($summary);
@@ -176,15 +179,22 @@ class NotificationManagement implements NotificationManagementInterface
         } catch (\Exception $e) {
             $this->logger->error('Failed to update process summary: ' . $e->getMessage());
         }
-        
-        $this->notice(sprintf('Process completed with status: %s', $status), [
+
+        $message = $this->currentTypeId
+            ? sprintf('%s process completed with status: %s', $this->currentTypeId, $status)
+            : sprintf('Process completed with status: %s', $status);
+
+        $this->notice($message, [
             'type' => 'process_end',
+            'type_id' => $this->currentTypeId,
+            'entity_type' => $this->currentTypeId,
             'status' => $status
         ]);
-        
+
         $this->currentProcessId = null;
+        $this->currentTypeId = null;
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -193,7 +203,7 @@ class NotificationManagement implements NotificationManagementInterface
         try {
             $summaryModel = $this->summaryFactory->create();
             $summaryData = $this->summaryResource->loadByProcessId($processId);
-            
+
             if (!empty($summaryData)) {
                 $summaryModel->setData($summaryData);
                 $summaryModel->addData($summary);
@@ -203,7 +213,7 @@ class NotificationManagement implements NotificationManagementInterface
             $this->logger->error('Failed to update process summary: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -211,7 +221,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->currentProfileId = $profileId;
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -219,7 +229,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->currentProcessId = $processId;
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -227,7 +237,7 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $this->currentContext = array_merge($this->currentContext, $context);
     }
-    
+
     /**
      * Log notification
      *
@@ -241,9 +251,9 @@ class NotificationManagement implements NotificationManagementInterface
         try {
             // Merge current context with passed context (passed context takes precedence)
             $fullContext = array_merge($this->currentContext, $context);
-            
+
             $notification = $this->notificationFactory->create();
-            
+
             $notification->setProfileId($fullContext['profile_id'] ?? $this->currentProfileId ?? 0);
             $notification->setProcessId($fullContext['process_id'] ?? $this->currentProcessId);
             $notification->setEntityId($fullContext['entity_id'] ?? null);
@@ -252,32 +262,32 @@ class NotificationManagement implements NotificationManagementInterface
             $notification->setType($fullContext['type'] ?? null);
             $notification->setTitle($this->extractTitle($message));
             $notification->setMessage($message);
-            
+
             // Remove sensitive data before serializing context
             $safeContext = $this->sanitizeContext($fullContext);
             $notification->setContext($this->serializer->serialize($safeContext));
-            
+
             $notification->setSource($this->extractSource());
-            
+
             if (isset($fullContext['exception_class'])) {
                 $notification->setExceptionClass($fullContext['exception_class']);
                 $notification->setStackTrace($fullContext['stack_trace'] ?? null);
             }
-            
+
             $this->notificationRepository->save($notification);
-            
+
             // Update process summary counters
             if ($this->currentProcessId) {
                 $this->updateSummaryCounters($this->currentProcessId, $severity);
             }
-            
+
         } catch (\Exception $e) {
             // Fallback to file logging if database save fails
             $this->logger->error('Failed to save notification: ' . $e->getMessage());
             $this->logger->log($this->mapSeverityToLogLevel($severity), $message, $context);
         }
     }
-    
+
     /**
      * Extract title from message
      *
@@ -288,15 +298,15 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $lines = explode("\n", $message);
         $title = trim($lines[0] ?? $message);
-        
+
         // Limit to 255 characters
         if (mb_strlen($title) > 255) {
             $title = mb_substr($title, 0, 252) . '...';
         }
-        
+
         return $title;
     }
-    
+
     /**
      * Extract source from backtrace
      *
@@ -305,18 +315,18 @@ class NotificationManagement implements NotificationManagementInterface
     private function extractSource(): string
     {
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-        
+
         foreach ($backtrace as $frame) {
-            if (isset($frame['class']) && 
+            if (isset($frame['class']) &&
                 !str_contains($frame['class'], 'ProfileNotification') &&
                 !str_contains($frame['class'], 'Interceptor')) {
                 return $frame['class'] . '::' . ($frame['function'] ?? 'unknown');
             }
         }
-        
+
         return 'unknown';
     }
-    
+
     /**
      * Sanitize context data
      *
@@ -326,24 +336,25 @@ class NotificationManagement implements NotificationManagementInterface
     private function sanitizeContext(array $context): array
     {
         $sensitiveKeys = ['password', 'token', 'secret', 'key', 'authorization'];
-        
+
         foreach ($context as $key => $value) {
-            $lowerKey = strtolower($key);
+            // Convert key to string to handle both string and numeric keys
+            $lowerKey = strtolower((string) $key);
             foreach ($sensitiveKeys as $sensitive) {
                 if (str_contains($lowerKey, $sensitive)) {
                     $context[$key] = '***REDACTED***';
                     break;
                 }
             }
-            
+
             if (is_array($value)) {
                 $context[$key] = $this->sanitizeContext($value);
             }
         }
-        
+
         return $context;
     }
-    
+
     /**
      * Update summary counters
      *
@@ -356,14 +367,14 @@ class NotificationManagement implements NotificationManagementInterface
         try {
             $summaryModel = $this->summaryFactory->create();
             $summaryData = $this->summaryResource->loadByProcessId($processId);
-            
+
             if (empty($summaryData)) {
                 return;
             }
-            
+
             $summaryModel->setData($summaryData);
             $summaryModel->setTotalProcessed($summaryModel->getTotalProcessed() + 1);
-            
+
             switch ($severity) {
                 case self::SEVERITY_DEBUG:
                 case self::SEVERITY_NOTICE:
@@ -379,13 +390,13 @@ class NotificationManagement implements NotificationManagementInterface
                     $summaryModel->setTotalCritical($summaryModel->getTotalCritical() + 1);
                     break;
             }
-            
+
             $this->summaryResource->save($summaryModel);
         } catch (\Exception $e) {
             $this->logger->error('Failed to update summary counters: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Map severity to PSR log level
      *
