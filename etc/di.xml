@@ -5,37 +5,94 @@
  * See LICENSE.txt for license details.
  */
 -->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    
+
     <!-- Interface preferences -->
-    <preference for="SoftCommerce\ProfileNotification\Api\NotificationManagementInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Api\NotificationManagementInterface"
                 type="SoftCommerce\ProfileNotification\Model\NotificationManagement"/>
-    <preference for="SoftCommerce\ProfileNotification\Api\NotificationRepositoryInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Api\NotificationRepositoryInterface"
                 type="SoftCommerce\ProfileNotification\Model\NotificationRepository"/>
-    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationInterface"
                 type="SoftCommerce\ProfileNotification\Model\Notification"/>
-    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationSummaryInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationSummaryInterface"
                 type="SoftCommerce\ProfileNotification\Model\NotificationSummary"/>
-    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationSearchResultsInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Api\Data\NotificationSearchResultsInterface"
                 type="SoftCommerce\ProfileNotification\Model\NotificationSearchResults"/>
-    <preference for="SoftCommerce\ProfileNotification\Model\Email\SenderInterface" 
+    <preference for="SoftCommerce\ProfileNotification\Model\Email\SenderInterface"
                 type="SoftCommerce\ProfileNotification\Model\Email\Sender"/>
-    
+
     <!-- Service Plugins -->
     <type name="SoftCommerce\Profile\Model\ServiceAbstract\ServiceInterface">
-        <plugin name="profile_notification_logger" 
-                type="SoftCommerce\ProfileNotification\Plugin\ServiceNotificationPlugin" 
+        <plugin name="profile_notification_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\ServiceNotificationPlugin"
                 sortOrder="10"/>
     </type>
-    
+
     <!-- Processor Plugins -->
     <type name="SoftCommerce\Profile\Model\ServiceAbstract\ProcessorInterface">
-        <plugin name="profile_notification_processor_logger" 
-                type="SoftCommerce\ProfileNotification\Plugin\ProcessorNotificationPlugin" 
+        <plugin name="profile_notification_processor_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\ProcessorNotificationPlugin"
                 sortOrder="10"/>
     </type>
-    
+
+    <!-- Collect Management Plugins -->
+    <!-- Plugin for AbstractCollectManagement base class -->
+    <type name="SoftCommerce\PlentyProfile\Model\CollectManagementInterface">
+        <plugin name="profile_notification_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin">
+        <arguments>
+            <argument name="logger" xsi:type="object">SoftCommerce\ProfileNotification\Logger</argument>
+        </arguments>
+    </type>
+
+    <!--<type name="SoftCommerce\PlentyProfile\Model\AbstractCollectManagement">
+        <plugin name="profile_notification_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>-->
+
+    <!-- Plugin for specific collect service implementations -->
+    <!--<type name="SoftCommerce\PlentyOrderProfile\Model\OrderCollectService">
+        <plugin name="profile_notification_order_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\PlentyItemProfile\Model\ItemCollectService">
+        <plugin name="profile_notification_item_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\PlentyItemProfile\Model\VariationCollectService">
+        <plugin name="profile_notification_variation_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\PlentyStockProfile\Model\StockCollectService">
+        <plugin name="profile_notification_stock_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\PlentyCustomerProfile\Model\CustomerCollectService">
+        <plugin name="profile_notification_customer_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>
+
+    <type name="SoftCommerce\PlentyCategoryProfile\Model\CategoryCollectService">
+        <plugin name="profile_notification_category_collect_logger"
+                type="SoftCommerce\ProfileNotification\Plugin\CollectNotificationPlugin"
+                sortOrder="10"/>
+    </type>-->
+
     <!-- Logger Configuration -->
     <virtualType name="SoftCommerce\ProfileNotification\Logger" type="Magento\Framework\Logger\Monolog">
         <arguments>
@@ -45,20 +102,20 @@
             </argument>
         </arguments>
     </virtualType>
-    
-    <virtualType name="SoftCommerce\ProfileNotification\Logger\Handler" 
+
+    <virtualType name="SoftCommerce\ProfileNotification\Logger\Handler"
                  type="Magento\Framework\Logger\Handler\Base">
         <arguments>
             <argument name="fileName" xsi:type="string">/var/log/profile_notification.log</argument>
         </arguments>
     </virtualType>
-    
+
     <type name="SoftCommerce\ProfileNotification\Model\NotificationManagement">
         <arguments>
             <argument name="logger" xsi:type="object">SoftCommerce\ProfileNotification\Logger</argument>
         </arguments>
     </type>
-    
+
     <!-- Grid Collection -->
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
@@ -68,22 +125,31 @@
             </argument>
         </arguments>
     </type>
-    
+
     <!-- Virtual Grid Collection -->
-    <virtualType name="SoftCommerce\ProfileNotification\Model\ResourceModel\Grid\Collection" 
+    <virtualType name="SoftCommerce\ProfileNotification\Model\ResourceModel\Grid\Collection"
                  type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
         <arguments>
             <argument name="mainTable" xsi:type="string">softcommerce_profile_notification</argument>
             <argument name="resourceModel" xsi:type="string">SoftCommerce\ProfileNotification\Model\ResourceModel\Notification</argument>
         </arguments>
     </virtualType>
-    
+
     <!-- Virtual Summary Grid Collection -->
-    <virtualType name="SoftCommerce\ProfileNotification\Model\ResourceModel\Summary\Grid\Collection" 
+    <virtualType name="SoftCommerce\ProfileNotification\Model\ResourceModel\Summary\Grid\Collection"
                  type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
         <arguments>
             <argument name="mainTable" xsi:type="string">softcommerce_profile_notification_summary</argument>
             <argument name="resourceModel" xsi:type="string">SoftCommerce\ProfileNotification\Model\ResourceModel\NotificationSummary</argument>
         </arguments>
     </virtualType>
+
+    <!-- Console Commands -->
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="softcommerce_notification_send_batch_emails" xsi:type="object">SoftCommerce\ProfileNotification\Console\Command\SendBatchEmailsCommand</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

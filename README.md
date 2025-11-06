@@ -66,6 +66,35 @@ module-profile-notification/
 3. Configure email settings in Admin > Stores > Configuration > SoftCommerce > Profile Notifications
 4. View notifications in Admin > System > Profile Notifications
 
+## CLI Commands
+
+### Send Batch Notification Emails
+
+Manually trigger the sending of batch notification emails:
+
+```bash
+# Send batch emails (respects configuration settings)
+bin/magento softcommerce:notification:send-batch-emails
+
+# Preview what would be sent without actually sending
+bin/magento softcommerce:notification:send-batch-emails --preview
+
+# Force sending even if disabled in configuration
+bin/magento softcommerce:notification:send-batch-emails --force
+
+# Override severity threshold (send only errors and critical)
+bin/magento softcommerce:notification:send-batch-emails --severity=error
+
+# Override time interval (send notifications older than 30 minutes)
+bin/magento softcommerce:notification:send-batch-emails --interval=30
+
+# Limit number of notifications to send
+bin/magento softcommerce:notification:send-batch-emails --limit=50
+
+# Combine options
+bin/magento softcommerce:notification:send-batch-emails --preview --severity=critical --interval=60
+```
+
 ## Support
 
 For issues or questions, please contact Soft Commerce Ltd support.
