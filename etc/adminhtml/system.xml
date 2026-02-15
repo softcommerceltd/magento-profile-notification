@@ -8,22 +8,18 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <section id="softcommerce_profile_notification" translate="label" type="text" sortOrder="200"
-                 showInDefault="1" showInWebsite="0" showInStore="0">
+        <section id="softcommerce_profile_notification" translate="label" type="text" sortOrder="200" showInDefault="1" showInWebsite="0" showInStore="0">
             <label>Profile Notifications</label>
             <tab>softcommerce_tab</tab>
             <resource>SoftCommerce_ProfileNotification::config</resource>
 
-            <group id="general" translate="label" type="text" sortOrder="10"
-                   showInDefault="1" showInWebsite="0" showInStore="0">
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>General Settings</label>
-                <field id="enabled" translate="label" type="select" sortOrder="10"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Enable Notifications</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="log_level" translate="label comment" type="select" sortOrder="20"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="log_level" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Minimum Log Level</label>
                     <comment>Only notifications at this level and above will be logged</comment>
                     <source_model>SoftCommerce\ProfileNotification\Model\Source\LogLevel</source_model>
@@ -31,8 +27,7 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="retention_days" translate="label comment" type="text" sortOrder="30"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="retention_days" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Retention Period (Days)</label>
                     <comment>Number of days to keep notifications. 0 = keep forever</comment>
                     <validate>validate-digits validate-zero-or-greater</validate>
@@ -40,8 +35,7 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="max_notifications" translate="label comment" type="text" sortOrder="40"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="max_notifications" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Maximum Notifications</label>
                     <comment>Maximum number of notifications to keep. 0 = no limit</comment>
                     <validate>validate-digits validate-zero-or-greater</validate>
@@ -51,16 +45,13 @@
                 </field>
             </group>
 
-            <group id="email" translate="label" type="text" sortOrder="20"
-                   showInDefault="1" showInWebsite="0" showInStore="0">
+            <group id="email" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>Email Notifications</label>
-                <field id="enabled" translate="label" type="select" sortOrder="10"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Enable Email Notifications</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="recipient" translate="label comment" type="text" sortOrder="20"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="recipient" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Recipient Email(s)</label>
                     <comment>Comma-separated list of email addresses</comment>
                     <validate>required-entry</validate>
@@ -68,16 +59,14 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="sender" translate="label" type="select" sortOrder="30"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="sender" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Email Sender</label>
                     <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="threshold" translate="label comment" type="select" sortOrder="40"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="threshold" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Email Threshold</label>
                     <comment>Minimum severity level to trigger email notifications</comment>
                     <source_model>SoftCommerce\ProfileNotification\Model\Source\EmailThreshold</source_model>
@@ -85,8 +74,7 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="real_time_critical" translate="label comment" type="select" sortOrder="50"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="real_time_critical" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Send Critical Errors Immediately</label>
                     <comment>Send email immediately for critical errors without batching</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -94,8 +82,7 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="batch_enabled" translate="label comment" type="select" sortOrder="60"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="batch_enabled" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Enable Batch Email Summary</label>
                     <comment>Send periodic summary of notifications</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -103,8 +90,7 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="batch_interval" translate="label comment" type="text" sortOrder="70"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="batch_interval" translate="label comment" type="text" sortOrder="70" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Batch Interval (Minutes)</label>
                     <comment>How often to send batch summary emails</comment>
                     <validate>validate-number validate-greater-than-zero</validate>
@@ -114,17 +100,14 @@
                 </field>
             </group>
 
-            <group id="performance" translate="label" type="text" sortOrder="30"
-                   showInDefault="1" showInWebsite="0" showInStore="0">
+            <group id="performance" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
                 <label>Performance Settings</label>
-                <field id="batch_size" translate="label comment" type="text" sortOrder="10"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="batch_size" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Batch Processing Size</label>
                     <comment>Number of notifications to process in a single batch</comment>
                     <validate>validate-number validate-greater-than-zero</validate>
                 </field>
-                <field id="enable_async" translate="label comment" type="select" sortOrder="20"
-                       showInDefault="1" showInWebsite="0" showInStore="0">
+                <field id="enable_async" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
                     <label>Enable Asynchronous Logging</label>
                     <comment>Process notifications asynchronously to improve performance</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
