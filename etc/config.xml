@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 <!--
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd (formerly Soft Commerce). All rights reserved.
  * See LICENSE.txt for license details.
  */
 -->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
         <softcommerce_profile_notification>
             <general>
@@ -22,6 +21,7 @@
                 <real_time_critical>1</real_time_critical>
                 <batch_enabled>1</batch_enabled>
                 <batch_interval>60</batch_interval>
+                <suppress_duplicate_emails>1</suppress_duplicate_emails>
             </email>
             <performance>
                 <batch_size>100</batch_size>

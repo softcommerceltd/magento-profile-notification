@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd (formerly Soft Commerce). All rights reserved.
  * See LICENSE.txt for license details.
  */
 -->
@@ -94,6 +94,14 @@
                     <label>Batch Interval (Minutes)</label>
                     <comment>How often to send batch summary emails</comment>
                     <validate>validate-number validate-greater-than-zero</validate>
+                    <depends>
+                        <field id="batch_enabled">1</field>
+                    </depends>
+                </field>
+                <field id="suppress_duplicate_emails" translate="label comment" type="select" sortOrder="80" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Suppress Duplicate Emails</label>
+                    <comment>When enabled, batch emails are only sent when the notification content has changed since the last email. Prevents repeated identical emails.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <depends>
                         <field id="batch_enabled">1</field>
                     </depends>
