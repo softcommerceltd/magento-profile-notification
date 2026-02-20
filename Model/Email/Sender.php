@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd (formerly Soft Commerce). All rights reserved.
  * See LICENSE.txt for license details.
  */
 
@@ -9,6 +9,8 @@ declare(strict_types=1);
 namespace SoftCommerce\ProfileNotification\Model\Email;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\DataObject;
+use Magento\Framework\FlagManager;
 use Magento\Framework\Mail\Template\TransportBuilder;
 use Magento\Framework\Translate\Inline\StateInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -16,6 +18,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use SoftCommerce\Profile\Api\Data\ProfileInterface;
 use SoftCommerce\Profile\Api\ProfileRepositoryInterface;
+use SoftCommerce\ProfileNotification\Api\Data\NotificationInterface;
 use SoftCommerce\ProfileNotification\Api\Data\NotificationSummaryInterface;
 
 /**
@@ -29,25 +32,22 @@ class Sender implements SenderInterface
     private const XML_PATH_EMAIL_THRESHOLD = 'softcommerce_profile_notification/email/threshold';
     private const XML_PATH_EMAIL_BATCH_ENABLED = 'softcommerce_profile_notification/email/batch_enabled';
     private const XML_PATH_EMAIL_REAL_TIME_CRITICAL = 'softcommerce_profile_notification/email/real_time_critical';
+    private const XML_PATH_EMAIL_SUPPRESS_DUPLICATES = 'softcommerce_profile_notification/email/suppress_duplicate_emails';
 
     private const EMAIL_TEMPLATE_CRITICAL_ALERT = 'profile_notification_critical_alert';
     private const EMAIL_TEMPLATE_PROCESS_SUMMARY = 'profile_notification_process_summary';
     private const EMAIL_TEMPLATE_BATCH_SUMMARY = 'profile_notification_batch_summary';
 
-    /**
-     * @param TransportBuilder $transportBuilder
-     * @param StateInterface $inlineTranslation
-     * @param ScopeConfigInterface $scopeConfig
-     * @param StoreManagerInterface $storeManager
-     * @param ProfileRepositoryInterface $profileRepository
-     * @param LoggerInterface $logger
-     */
+    private const FLAG_LAST_SUMMARY_DIGEST_PREFIX = 'softcommerce_notification_last_summary_digest_';
+    private const MAX_DETAIL_ITEMS = 20;
+
     public function __construct(
         private readonly TransportBuilder $transportBuilder,
         private readonly StateInterface $inlineTranslation,
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly StoreManagerInterface $storeManager,
         private readonly ProfileRepositoryInterface $profileRepository,
+        private readonly FlagManager $flagManager,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -58,7 +58,7 @@ class Sender implements SenderInterface
     public function isRealTimeCriticalEnabled(): bool
     {
         return $this->isEmailEnabled() &&
-               $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_REAL_TIME_CRITICAL, ScopeInterface::SCOPE_STORE);
+            $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_REAL_TIME_CRITICAL, ScopeInterface::SCOPE_STORE);
     }
 
     /**
@@ -93,18 +93,22 @@ class Sender implements SenderInterface
                 return;
             }
 
-            // Prepare email variables
+            $profileId = $context['profile_id'] ?? null;
+            $profileName = $profileId ? $this->getProfileName($profileId) : null;
+
+            // Prepare email variables — all values must be scalars safe for Magento's template filter.
+            // Strings containing "{{" would be parsed as directives and break rendering.
             $templateVars = [
-                'message' => $message,
-                'context' => $context,
-                'profile_name' => $this->getProfileName($context['profile_id'] ?? null),
+                'message' => $this->sanitizeForTemplate($message),
+                'profile_name' => $profileName ?? ($context['alert_source'] ?? 'System'),
+                'has_profile' => $profileName !== null,
                 'severity' => 'CRITICAL',
                 'timestamp' => date('Y-m-d H:i:s'),
-                'server_name' => gethostname(),
-                'entity_type' => $context['entity_type'] ?? 'Unknown',
-                'entity_id' => $context['entity_id'] ?? 'N/A',
-                'exception_class' => $context['exception_class'] ?? null,
-                'stack_trace' => $context['stack_trace'] ?? null
+                'server_name' => (string) gethostname(),
+                'entity_type' => $context['entity_type'] ?? '',
+                'entity_id' => (string) ($context['entity_id'] ?? ''),
+                'exception_class' => $context['exception_class'] ?? '',
+                'stack_trace' => $this->sanitizeForTemplate($context['stack_trace'] ?? '')
             ];
 
             // Send email
@@ -139,6 +143,19 @@ class Sender implements SenderInterface
         }
 
         try {
+            // Suppress duplicate process summary emails per profile
+            if ($this->isSuppressDuplicatesEnabled()) {
+                $currentDigest = $this->computeProcessSummaryDigest($summary);
+                $flagKey = self::FLAG_LAST_SUMMARY_DIGEST_PREFIX . $summary->getProfileId();
+                $lastDigest = $this->flagManager->getFlagData($flagKey);
+
+                if ($currentDigest === $lastDigest) {
+                    return;
+                }
+
+                $this->flagManager->saveFlag($flagKey, $currentDigest);
+            }
+
             $this->inlineTranslation->suspend();
 
             $storeId = $this->storeManager->getStore()->getId();
@@ -227,6 +244,9 @@ class Sender implements SenderInterface
                 }
             }
 
+            // Build deduplicated detail items for the email body
+            $detailItems = $this->buildNotificationDetails($notifications);
+
             // Prepare email variables
             $templateVars = [
                 'total_notifications' => count($notifications),
@@ -235,6 +255,9 @@ class Sender implements SenderInterface
                 'warning_count' => count($grouped['warning']),
                 'notice_count' => count($grouped['notice']),
                 'notifications_by_severity' => $grouped,
+                'notification_items' => $detailItems,
+                'has_details' => !empty($detailItems),
+                'details_truncated' => count($detailItems) >= self::MAX_DETAIL_ITEMS,
                 'timestamp' => date('Y-m-d H:i:s')
             ];
 
@@ -299,12 +322,12 @@ class Sender implements SenderInterface
      * Get profile name by ID
      *
      * @param int|null $profileId
-     * @return string
+     * @return string|null
      */
-    private function getProfileName(?int $profileId): string
+    private function getProfileName(?int $profileId): ?string
     {
         if (!$profileId) {
-            return 'Unknown Profile';
+            return null;
         }
 
         try {
@@ -313,6 +336,22 @@ class Sender implements SenderInterface
         } catch (\Exception $e) {
             return 'Profile #' . $profileId;
         }
+    }
+
+    /**
+     * Sanitize a string value for use in Magento email templates.
+     *
+     * Magento's template filter processes the entire template output after variable substitution,
+     * so any "{{...}}" patterns inside variable values (e.g. from stack traces or error messages)
+     * will be interpreted as directives and cause rendering to fail.
+     *
+     * @param string $value
+     * @return string
+     */
+    private function sanitizeForTemplate(string $value): string
+    {
+        // Replace {{ with escaped version that won't be parsed as a directive
+        return str_replace('{{', '{ {', $value);
     }
 
     /**
@@ -350,5 +389,81 @@ class Sender implements SenderInterface
         }
 
         return sprintf('%.2f %s', $bytes, $units[$i]);
+    }
+
+    /**
+     * Check if duplicate email suppression is enabled
+     *
+     * @return bool
+     */
+    private function isSuppressDuplicatesEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_PATH_EMAIL_SUPPRESS_DUPLICATES, ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * Build deduplicated notification detail items for the email body.
+     *
+     * Groups notifications by entity ID + title to avoid repeating the same
+     * error multiple times, and returns DataObject instances for use with
+     * the {{for}} directive in email templates.
+     *
+     * @param NotificationInterface[] $notifications
+     * @return DataObject[]
+     */
+    private function buildNotificationDetails(array $notifications): array
+    {
+        $items = [];
+        $seen = [];
+
+        foreach ($notifications as $notification) {
+            $entityId = $notification->getEntityId() ?: '';
+            $title = $notification->getTitle();
+            $signature = $entityId . '|' . $title;
+
+            if (isset($seen[$signature])) {
+                continue;
+            }
+
+            $seen[$signature] = true;
+
+            $profileName = $notification->getProfileId()
+                ? $this->getProfileName($notification->getProfileId())
+                : null;
+
+            $items[] = new DataObject([
+                'severity' => strtoupper($notification->getSeverity()),
+                'profile_name' => $profileName ?: 'N/A',
+                'entity_type' => $notification->getEntityType() ?: 'N/A',
+                'entity_id' => $entityId ?: 'N/A',
+                'title' => $this->sanitizeForTemplate($title),
+            ]);
+
+            if (count($items) >= self::MAX_DETAIL_ITEMS) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Compute a digest hash from a process summary.
+     *
+     * Uses profile ID, status and error/warning/critical counts so that
+     * a new email is only sent when the outcome of a profile run changes.
+     *
+     * @param NotificationSummaryInterface $summary
+     * @return string
+     */
+    private function computeProcessSummaryDigest(NotificationSummaryInterface $summary): string
+    {
+        return md5(json_encode([
+            'profile_id' => $summary->getProfileId(),
+            'status' => $summary->getStatus(),
+            'total_warnings' => $summary->getTotalWarnings(),
+            'total_errors' => $summary->getTotalErrors(),
+            'total_critical' => $summary->getTotalCritical(),
+        ]));
     }
 }

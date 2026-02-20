@@ -1,6 +1,6 @@
 <!--
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd. All rights reserved.
  * See LICENSE.txt for license details.
  */
 -->
@@ -72,17 +72,36 @@
                                     </table>
                                 </td>
                             </tr>
-                            
+
                             {{if has_details}}
                             <tr>
-                                <td valign="top" style="padding:20px 0;">
-                                    <p style="font-size:12px; line-height:16px; margin:0; color:#666;">
-                                        {{trans "Recent notifications include errors that require your attention. Please check the admin panel for full details."}}
+                                <td valign="top" style="padding:10px 0;">
+                                    <h3 style="font-size:14px; font-weight:bold; margin:0 0 5px 0;">{{trans "Notification Details"}}</h3>
+                                    <table cellpadding="5" cellspacing="0" border="0" width="100%" style="border:1px solid #ddd;">
+                                        <tr>
+                                            <td style="background-color:#f5f5f5; font-weight:bold; width:60px;">{{trans "Severity"}}</td>
+                                            <td style="background-color:#f5f5f5; font-weight:bold; width:100px;">{{trans "Profile"}}</td>
+                                            <td style="background-color:#f5f5f5; font-weight:bold; width:80px;">{{trans "Entity ID"}}</td>
+                                            <td style="background-color:#f5f5f5; font-weight:bold;">{{trans "Message"}}</td>
+                                        </tr>
+                                        {{for item in notification_items}}
+                                        <tr>
+                                            <td style="border-top:1px solid #ddd; color:#ff0000; font-size:10px;">{{var item.severity}}</td>
+                                            <td style="border-top:1px solid #ddd; font-size:10px;">{{var item.profile_name}}</td>
+                                            <td style="border-top:1px solid #ddd; font-size:10px;">{{var item.entity_id}}</td>
+                                            <td style="border-top:1px solid #ddd; font-size:10px;">{{var item.title}}</td>
+                                        </tr>
+                                        {{/for}}
+                                    </table>
+                                    {{if details_truncated}}
+                                    <p style="font-size:11px; color:#666; margin:5px 0 0 0;">
+                                        {{trans "Only the first 20 unique notifications are shown. Please check the admin panel for the complete list."}}
                                     </p>
+                                    {{/if}}
                                 </td>
                             </tr>
                             {{/if}}
-                            
+
                             <tr>
                                 <td valign="top" style="padding:20px 0 0 0;">
                                     <p style="font-size:12px; line-height:16px; margin:0; padding:10px; background-color:#f5f5f5; border:1px solid #ddd;">
