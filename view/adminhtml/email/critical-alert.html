@@ -1,10 +1,10 @@
 <!--
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd. All rights reserved.
  * See LICENSE.txt for license details.
  */
 -->
-<!--@subject {{trans "CRITICAL: Profile Error Alert - %profile_name" profile_name=$profile_name}} @-->
+<!--@subject {{trans "CRITICAL: %profile_name" profile_name=$profile_name}} @-->
 <!--@styles
     body,td { color:#2f2f2f; font:11px/1.35em Verdana, Arial, Helvetica, sans-serif; }
 @-->
@@ -26,7 +26,7 @@
                             <tr>
                                 <td valign="top" style="padding:0 0 5px 0;">
                                     <p style="font-size:12px; line-height:16px; margin:0;">
-                                        <strong>{{trans "Profile:"}} </strong> {{var profile_name}}<br/>
+                                        <strong>{{trans "Source:"}} </strong> {{var profile_name}}<br/>
                                         <strong>{{trans "Severity:"}} </strong> <span style="color:#ff0000;">{{var severity}}</span><br/>
                                         <strong>{{trans "Timestamp:"}} </strong> {{var timestamp}}<br/>
                                         <strong>{{trans "Server:"}} </strong> {{var server_name}}
@@ -56,16 +56,20 @@
                                     <p style="font-size:12px; line-height:16px; margin:0 0 5px 0;">
                                         <strong>{{trans "Exception Class:"}} </strong> {{var exception_class}}
                                     </p>
-                                    {{if stack_trace}}
+                                </td>
+                            </tr>
+                            {{/if}}
+                            {{if stack_trace}}
+                            <tr>
+                                <td valign="top" style="padding:0 0 10px 0;">
                                     <div style="background-color:#f5f5f5; padding:10px; border:1px solid #ddd; font-family:monospace; font-size:10px; max-height:300px; overflow:auto; white-space:pre-wrap;">{{var stack_trace}}</div>
-                                    {{/if}}
                                 </td>
                             </tr>
                             {{/if}}
                             <tr>
                                 <td valign="top" style="padding:20px 0 0 0;">
                                     <p style="font-size:12px; line-height:16px; margin:0; color:#666;">
-                                        {{trans "This is an automated notification from your Mage2Plenty connector. Please check your admin panel for more details."}}
+                                        {{trans "This is an automated notification. Please check your admin panel for more details."}}
                                     </p>
                                 </td>
                             </tr>

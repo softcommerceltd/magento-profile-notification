@@ -149,4 +149,4 @@ To remove the module:
 
 ## Support
 
-For installation support, please contact Soft Commerce Ltd.
+For installation support, please contact Byte8 Ltd.

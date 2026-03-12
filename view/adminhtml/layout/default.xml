@@ -1,13 +1,11 @@
 <?xml version="1.0"?>
 <!--
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd (formerly Soft Commerce). All rights reserved.
  * See LICENSE.txt for license details.
  */
 -->
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <head>
-        <css src="SoftCommerce_ProfileNotification::css/notification.css"/>
-    </head>
+    <!-- Styles are loaded via css/source/_module.less (auto-included by Magento admin LESS compilation) -->
 </page>

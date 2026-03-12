@@ -1,12 +1,12 @@
 {
     "name": "softcommerce/module-profile-notification",
-    "description": "Comprehensive notification system for SoftCommerce profile operations",
+    "description": "Comprehensive notification system for Byte8 profile operations",
     "type": "magento2-module",
     "license": "proprietary",
     "authors": [
         {
-            "name": "SoftCommerce",
-            "email": "support@softcommerce.io"
+            "name": "Byte8 Ltd",
+            "email": "support@byte8.io"
         }
     ],
     "require": {

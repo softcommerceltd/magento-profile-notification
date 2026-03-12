@@ -29,6 +29,7 @@ class SendBatchEmails
     private const XML_PATH_THRESHOLD = 'softcommerce_profile_notification/email/threshold';
     private const XML_PATH_SUPPRESS_DUPLICATES = 'softcommerce_profile_notification/email/suppress_duplicate_emails';
     private const FLAG_LAST_BATCH_DIGEST = 'softcommerce_notification_last_batch_digest';
+    private const FLAG_LAST_BATCH_SENT_AT = 'softcommerce_notification_last_batch_sent_at';
 
     public function __construct(
         private readonly NotificationRepositoryInterface $notificationRepository,
@@ -73,6 +74,7 @@ class SendBatchEmails
 
             if ($shouldSend) {
                 $this->emailSender->sendBatchNotification($notifications);
+                $this->flagManager->saveFlag(self::FLAG_LAST_BATCH_SENT_AT, date('Y-m-d H:i:s'));
             }
 
             // Always mark notifications as emailed to prevent accumulation
@@ -144,14 +146,20 @@ class SendBatchEmails
      */
     private function getUnsentNotifications(): array
     {
-        $threshold = $this->scopeConfig->getValue(self::XML_PATH_THRESHOLD, ScopeInterface::SCOPE_STORE);
         $interval = (int) $this->scopeConfig->getValue(self::XML_PATH_BATCH_INTERVAL, ScopeInterface::SCOPE_STORE);
+        $lastSentAt = $this->flagManager->getFlagData(self::FLAG_LAST_BATCH_SENT_AT);
 
-        $cutoffTime = date('Y-m-d H:i:s', strtotime("-{$interval} minutes"));
+        if ($lastSentAt && $interval > 0) {
+            $nextSendTime = strtotime($lastSentAt) + ($interval * 60);
+            if (time() < $nextSendTime) {
+                return [];
+            }
+        }
+
+        $threshold = $this->scopeConfig->getValue(self::XML_PATH_THRESHOLD, ScopeInterface::SCOPE_STORE);
 
         $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter('is_emailed', false)
-            ->addFilter('created_at', $cutoffTime, 'lteq');
+            ->addFilter('is_emailed', false);
 
         // Apply severity threshold
         switch ($threshold) {

@@ -16,7 +16,6 @@ use Magento\Framework\Translate\Inline\StateInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use SoftCommerce\Profile\Api\Data\ProfileInterface;
 use SoftCommerce\Profile\Api\ProfileRepositoryInterface;
 use SoftCommerce\ProfileNotification\Api\Data\NotificationInterface;
 use SoftCommerce\ProfileNotification\Api\Data\NotificationSummaryInterface;

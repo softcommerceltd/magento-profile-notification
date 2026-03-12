@@ -97,9 +97,9 @@ bin/magento softcommerce:notification:send-batch-emails --preview --severity=cri
 
 ## Support
 
-For issues or questions, please contact Soft Commerce Ltd support.
+For issues or questions, please contact Byte8 Ltd support.
 
 ## License
 
-Copyright © Soft Commerce Ltd. All rights reserved.
+Copyright © Byte8 Ltd. All rights reserved.
 See LICENSE.txt for license details.

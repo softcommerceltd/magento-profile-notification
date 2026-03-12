@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright © Soft Commerce Ltd. All rights reserved.
+ * Copyright © Byte8 Ltd (formerly Soft Commerce). All rights reserved.
  * See LICENSE.txt for license details.
  */
 
@@ -90,7 +90,17 @@ class NotificationManagement implements NotificationManagementInterface
         // Send immediate email for critical errors
         try {
             if ($this->emailSender->isRealTimeCriticalEnabled()) {
-                $this->emailSender->sendCriticalAlert($message, $context);
+                // Enrich context with current profile/process state so the email sender
+                // can resolve the profile name even when the caller didn't pass profile_id.
+                $emailContext = array_merge(
+                    array_filter([
+                        'profile_id' => $this->currentProfileId,
+                        'process_id' => $this->currentProcessId,
+                    ]),
+                    $this->currentContext,
+                    $context
+                );
+                $this->emailSender->sendCriticalAlert($message, $emailContext);
             }
         } catch (\Exception $e) {
             $this->logger->error('Failed to send critical alert email: ' . $e->getMessage());
