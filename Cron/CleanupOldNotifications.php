@@ -11,7 +11,7 @@ namespace SoftCommerce\ProfileNotification\Cron;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
-use SoftCommerce\ProfileNotification\Model\ResourceModel\Notification\CollectionFactory;
+use SoftCommerce\ProfileNotification\Model\ResourceModel\Notification as NotificationResource;
 
 /**
  * Cron job to cleanup old notifications
@@ -21,14 +21,15 @@ class CleanupOldNotifications
     private const XML_PATH_ENABLED = 'softcommerce_profile_notification/general/enabled';
     private const XML_PATH_RETENTION_DAYS = 'softcommerce_profile_notification/general/retention_days';
     private const XML_PATH_MAX_NOTIFICATIONS = 'softcommerce_profile_notification/general/max_notifications';
+    private const BATCH_SIZE = 50000;
 
     /**
-     * @param CollectionFactory $collectionFactory
+     * @param NotificationResource $resource
      * @param ScopeConfigInterface $scopeConfig
      * @param LoggerInterface $logger
      */
     public function __construct(
-        private readonly CollectionFactory $collectionFactory,
+        private readonly NotificationResource $resource,
         private readonly ScopeConfigInterface $scopeConfig,
         private readonly LoggerInterface $logger
     ) {
@@ -54,7 +55,7 @@ class CleanupOldNotifications
     }
 
     /**
-     * Cleanup notifications by age
+     * Cleanup notifications by age using direct SQL in batches
      *
      * @return void
      */
@@ -70,23 +71,35 @@ class CleanupOldNotifications
         }
 
         $cutoffDate = date('Y-m-d H:i:s', strtotime("-{$retentionDays} days"));
+        $connection = $this->resource->getConnection();
+        $tableName = $this->resource->getMainTable();
+        $totalDeleted = 0;
 
-        $collection = $this->collectionFactory->create();
-        $collection->addFieldToFilter('created_at', ['lt' => $cutoffDate]);
-        $collection->walk('delete');
+        do {
+            $deleted = $connection->delete(
+                $tableName,
+                [
+                    'created_at < ?' => $cutoffDate,
+                    'notification_id IN (?)' => $connection->select()
+                        ->from($tableName, ['notification_id'])
+                        ->where('created_at < ?', $cutoffDate)
+                        ->limit(self::BATCH_SIZE)
+                ]
+            );
+            $totalDeleted += $deleted;
+        } while ($deleted >= self::BATCH_SIZE);
 
-        $count = $collection->getSize();
-        if ($count > 0) {
+        if ($totalDeleted > 0) {
             $this->logger->info(sprintf(
                 'Cleaned up %d notifications older than %d days',
-                $count,
+                $totalDeleted,
                 $retentionDays
             ));
         }
     }
 
     /**
-     * Cleanup notifications by count
+     * Cleanup notifications by count using direct SQL in batches
      *
      * @return void
      */
@@ -101,24 +114,38 @@ class CleanupOldNotifications
             return;
         }
 
-        $collection = $this->collectionFactory->create();
-        $totalCount = $collection->getSize();
+        $connection = $this->resource->getConnection();
+        $tableName = $this->resource->getMainTable();
+        $totalCount = (int) $connection->fetchOne(
+            $connection->select()->from($tableName, ['COUNT(*)'])
+        );
 
         if ($totalCount <= $maxNotifications) {
             return;
         }
 
-        $deleteCount = $totalCount - $maxNotifications;
+        $totalDeleted = 0;
 
-        $collection = $this->collectionFactory->create();
-        $collection->setOrder('created_at', 'ASC');
-        $collection->setPageSize($deleteCount);
-        $collection->walk('delete');
+        do {
+            $deleted = $connection->delete(
+                $tableName,
+                [
+                    'notification_id IN (?)' => $connection->select()
+                        ->from($tableName, ['notification_id'])
+                        ->order('created_at ASC')
+                        ->limit(self::BATCH_SIZE)
+                ]
+            );
+            $totalDeleted += $deleted;
+            $remaining = $totalCount - $totalDeleted;
+        } while ($deleted >= self::BATCH_SIZE && $remaining > $maxNotifications);
 
-        $this->logger->info(sprintf(
-            'Cleaned up %d notifications to maintain maximum of %d',
-            $deleteCount,
-            $maxNotifications
-        ));
+        if ($totalDeleted > 0) {
+            $this->logger->info(sprintf(
+                'Cleaned up %d notifications to maintain maximum of %d',
+                $totalDeleted,
+                $maxNotifications
+            ));
+        }
     }
 }

@@ -10,7 +10,7 @@
         <softcommerce_profile_notification>
             <general>
                 <enabled>1</enabled>
-                <log_level>notice</log_level>
+                <log_level>error</log_level>
                 <retention_days>30</retention_days>
                 <max_notifications>10000</max_notifications>
             </general>

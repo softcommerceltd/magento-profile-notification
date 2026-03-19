@@ -8,8 +8,10 @@ declare(strict_types=1);
 
 namespace SoftCommerce\ProfileNotification\Model;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Store\Model\ScopeInterface;
 use Psr\Log\LoggerInterface;
 use SoftCommerce\ProfileNotification\Api\NotificationManagementInterface;
 use SoftCommerce\ProfileNotification\Api\NotificationRepositoryInterface;
@@ -23,6 +25,16 @@ use SoftCommerce\ProfileNotification\Model\ResourceModel\NotificationSummary as 
  */
 class NotificationManagement implements NotificationManagementInterface
 {
+    private const SEVERITY_LEVELS = [
+        self::SEVERITY_DEBUG => 0,
+        self::SEVERITY_NOTICE => 1,
+        self::SEVERITY_WARNING => 2,
+        self::SEVERITY_ERROR => 3,
+        self::SEVERITY_CRITICAL => 4,
+    ];
+
+    private const XML_PATH_LOG_LEVEL = 'softcommerce_profile_notification/general/log_level';
+
     private ?int $currentProfileId = null;
     private ?string $currentProcessId = null;
     private ?string $currentTypeId = null;
@@ -34,6 +46,7 @@ class NotificationManagement implements NotificationManagementInterface
      * @param NotificationSummaryInterfaceFactory $summaryFactory
      * @param SummaryResource $summaryResource
      * @param SenderInterface $emailSender
+     * @param ScopeConfigInterface $scopeConfig
      * @param SerializerInterface $serializer
      * @param LoggerInterface $logger
      */
@@ -43,6 +56,7 @@ class NotificationManagement implements NotificationManagementInterface
         private readonly NotificationSummaryInterfaceFactory $summaryFactory,
         private readonly SummaryResource $summaryResource,
         private readonly SenderInterface $emailSender,
+        private readonly ScopeConfigInterface $scopeConfig,
         private readonly SerializerInterface $serializer,
         private readonly LoggerInterface $logger
     ) {
@@ -258,6 +272,10 @@ class NotificationManagement implements NotificationManagementInterface
      */
     private function log(string $severity, string $message, array $context = []): void
     {
+        if (!$this->isAboveMinLevel($severity)) {
+            return;
+        }
+
         try {
             // Merge current context with passed context (passed context takes precedence)
             $fullContext = array_merge($this->currentContext, $context);
@@ -277,7 +295,9 @@ class NotificationManagement implements NotificationManagementInterface
             $safeContext = $this->sanitizeContext($fullContext);
             $notification->setContext($this->serializer->serialize($safeContext));
 
-            $notification->setSource($this->extractSource());
+            if ($severity === self::SEVERITY_ERROR || $severity === self::SEVERITY_CRITICAL) {
+                $notification->setSource($this->extractSource());
+            }
 
             if (isset($fullContext['exception_class'])) {
                 $notification->setExceptionClass($fullContext['exception_class']);
@@ -405,6 +425,25 @@ class NotificationManagement implements NotificationManagementInterface
         } catch (\Exception $e) {
             $this->logger->error('Failed to update summary counters: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check if severity meets minimum configured log level
+     *
+     * @param string $severity
+     * @return bool
+     */
+    private function isAboveMinLevel(string $severity): bool
+    {
+        $minLevel = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_LOG_LEVEL,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        $severityLevel = self::SEVERITY_LEVELS[$severity] ?? 0;
+        $minSeverityLevel = self::SEVERITY_LEVELS[$minLevel] ?? 0;
+
+        return $severityLevel >= $minSeverityLevel;
     }
 
     /**
