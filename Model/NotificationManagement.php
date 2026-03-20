@@ -33,6 +33,7 @@ class NotificationManagement implements NotificationManagementInterface
         self::SEVERITY_CRITICAL => 4,
     ];
 
+    private const XML_PATH_ENABLED = 'softcommerce_profile_notification/general/enabled';
     private const XML_PATH_LOG_LEVEL = 'softcommerce_profile_notification/general/log_level';
 
     private ?int $currentProfileId = null;
@@ -142,6 +143,13 @@ class NotificationManagement implements NotificationManagementInterface
     {
         $processId = uniqid('process_' . $profileId . '_', true);
 
+        if (!$this->isEnabled()) {
+            $this->setProfileId($profileId);
+            $this->setProcessId($processId);
+            $this->currentTypeId = $typeId;
+            return $processId;
+        }
+
         $summary = $this->summaryFactory->create();
         $summary->setProfileId($profileId);
         $summary->setProcessId($processId);
@@ -177,6 +185,12 @@ class NotificationManagement implements NotificationManagementInterface
      */
     public function endProcess(string $processId, string $status): void
     {
+        if (!$this->isEnabled()) {
+            $this->currentProcessId = null;
+            $this->currentTypeId = null;
+            return;
+        }
+
         try {
             $summary = $this->summaryFactory->create();
             $summaryData = $this->summaryResource->loadByProcessId($processId);
@@ -224,6 +238,10 @@ class NotificationManagement implements NotificationManagementInterface
      */
     public function setSummary(string $processId, array $summary): void
     {
+        if (!$this->isEnabled()) {
+            return;
+        }
+
         try {
             $summaryModel = $this->summaryFactory->create();
             $summaryData = $this->summaryResource->loadByProcessId($processId);
@@ -272,7 +290,7 @@ class NotificationManagement implements NotificationManagementInterface
      */
     private function log(string $severity, string $message, array $context = []): void
     {
-        if (!$this->isAboveMinLevel($severity)) {
+        if (!$this->isEnabled() || !$this->isAboveMinLevel($severity)) {
             return;
         }
 
@@ -425,6 +443,16 @@ class NotificationManagement implements NotificationManagementInterface
         } catch (\Exception $e) {
             $this->logger->error('Failed to update summary counters: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check if notification system is enabled
+     *
+     * @return bool
+     */
+    private function isEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_PATH_ENABLED, ScopeInterface::SCOPE_STORE);
     }
 
     /**
