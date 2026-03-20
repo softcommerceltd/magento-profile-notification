@@ -76,18 +76,23 @@ class CleanupOldNotifications
         $totalDeleted = 0;
 
         do {
+            $ids = $connection->fetchCol(
+                $connection->select()
+                    ->from($tableName, ['notification_id'])
+                    ->where('created_at < ?', $cutoffDate)
+                    ->limit(self::BATCH_SIZE)
+            );
+
+            if (empty($ids)) {
+                break;
+            }
+
             $deleted = $connection->delete(
                 $tableName,
-                [
-                    'created_at < ?' => $cutoffDate,
-                    'notification_id IN (?)' => $connection->select()
-                        ->from($tableName, ['notification_id'])
-                        ->where('created_at < ?', $cutoffDate)
-                        ->limit(self::BATCH_SIZE)
-                ]
+                ['notification_id IN (?)' => $ids]
             );
             $totalDeleted += $deleted;
-        } while ($deleted >= self::BATCH_SIZE);
+        } while (count($ids) >= self::BATCH_SIZE);
 
         if ($totalDeleted > 0) {
             $this->logger->info(sprintf(
@@ -127,18 +132,24 @@ class CleanupOldNotifications
         $totalDeleted = 0;
 
         do {
+            $ids = $connection->fetchCol(
+                $connection->select()
+                    ->from($tableName, ['notification_id'])
+                    ->order('created_at ASC')
+                    ->limit(self::BATCH_SIZE)
+            );
+
+            if (empty($ids)) {
+                break;
+            }
+
             $deleted = $connection->delete(
                 $tableName,
-                [
-                    'notification_id IN (?)' => $connection->select()
-                        ->from($tableName, ['notification_id'])
-                        ->order('created_at ASC')
-                        ->limit(self::BATCH_SIZE)
-                ]
+                ['notification_id IN (?)' => $ids]
             );
             $totalDeleted += $deleted;
             $remaining = $totalCount - $totalDeleted;
-        } while ($deleted >= self::BATCH_SIZE && $remaining > $maxNotifications);
+        } while (count($ids) >= self::BATCH_SIZE && $remaining > $maxNotifications);
 
         if ($totalDeleted > 0) {
             $this->logger->info(sprintf(
