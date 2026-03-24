@@ -78,7 +78,7 @@ class View extends Action implements HttpGetActionInterface
 
             return $resultPage;
         } catch (\Exception $e) {
-            $this->messageManager->addErrorMessage(__('Notification not found. xxxx'));
+            $this->messageManager->addErrorMessage(__('Notification #%1 not found', $notificationId));
             $resultRedirect = $this->resultRedirectFactory->create();
             return $resultRedirect->setPath('*/*/');
         }
