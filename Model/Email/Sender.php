@@ -169,11 +169,13 @@ class Sender implements SenderInterface
             $peakMemory = $summary->getPeakMemory() ?: 0;
 
             // Prepare email variables
+            $status = $summary->getStatus();
             $templateVars = [
                 'summary' => $summary,
                 'profile_name' => $this->getProfileName($summary->getProfileId()),
                 'process_id' => $summary->getProcessId(),
-                'status' => $summary->getStatus(),
+                'status' => $status,
+                'status_color' => $status === 'success' ? '#009900' : '#ff0000',
                 'total_processed' => $summary->getTotalProcessed(),
                 'total_success' => $summary->getTotalSuccess(),
                 'total_warnings' => $summary->getTotalWarnings(),

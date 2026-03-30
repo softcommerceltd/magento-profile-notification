@@ -30,11 +30,7 @@
                                         <strong>{{trans "Profile:"}} </strong> {{var profile_name}}<br/>
                                         <strong>{{trans "Process ID:"}} </strong> {{var process_id}}<br/>
                                         <strong>{{trans "Status:"}} </strong>
-                                        {{if status == "success"}}
-                                            <span style="color:#009900;">{{var status}}</span>
-                                        {{else}}
-                                            <span style="color:#ff0000;">{{var status}}</span>
-                                        {{/if}}
+                                        <span style="color:{{var status_color}};">{{var status}}</span>
                                     </p>
                                 </td>
                             </tr>
